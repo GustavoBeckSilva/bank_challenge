@@ -1,4 +1,4 @@
-package br.com.compass;
+package br.com.compass.bankchallenge.application;
 
 import java.util.Scanner;
 
