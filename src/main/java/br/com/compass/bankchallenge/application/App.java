@@ -2,15 +2,22 @@ package br.com.compass.bankchallenge.application;
 
 import java.util.Scanner;
 
+import br.com.compass.bankchallenge.service.ClientService;
+
 public class App {
     
     public static void main(String[] args) {
-        Scanner scanner = new Scanner(System.in);
+       /* Scanner scanner = new Scanner(System.in);
 
         mainMenu(scanner);
         
         scanner.close();
         System.out.println("Application closed");
+        
+        */
+    	
+    	  ClientService clientService = new ClientService();
+          clientService.registerClient("João Silva", "12345678900", "11999999999");
     }
 
     public static void mainMenu(Scanner scanner) {
