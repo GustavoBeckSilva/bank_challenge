@@ -14,7 +14,7 @@ public class Client extends User{
 	private String phone;
 	private LocalDate birthDate;
 
-	private List<Account> accounts;
+	//private List<Account> accounts;
 	
 	public Client() {}
 
@@ -49,8 +49,8 @@ public class Client extends User{
 		this.birthDate = birthDate;
 	}
 
-	public List<Account> getAccounts() {
+/*	public List<Account> getAccounts() {
 		return accounts;
 	}
-		
+*/	
 }

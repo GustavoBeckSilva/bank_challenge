@@ -10,9 +10,16 @@ public abstract class User {
 	@Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
-	private String name;
+	
+	@Column(nullable = false, unique = true)
 	private String email;
+	
+	@Column(nullable = false)
 	private String password;
+	
+	private Integer failedLoginAttempts;
+
+	private String name;
 	private boolean blocked;
 	private AccessLevel accessLevel;
 	
@@ -22,6 +29,14 @@ public abstract class User {
 	
 	public void setId(Long id) {
 		this.id = id;
+	}
+	
+	public Integer getFailedLoginAttempts() {
+		return failedLoginAttempts;
+	}
+	
+	public void setFailedLoginAttempts(Integer failedLoginAttempts) {
+		this.failedLoginAttempts = failedLoginAttempts;
 	}
 	
 	public String getName() {
