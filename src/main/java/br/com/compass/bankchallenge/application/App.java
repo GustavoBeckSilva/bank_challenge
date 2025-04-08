@@ -3,73 +3,21 @@ package br.com.compass.bankchallenge.application;
 import java.time.LocalDate;
 import java.util.Scanner;
 
+import br.com.compass.bankchallenge.domain.Account;
 import br.com.compass.bankchallenge.domain.Client;
-import br.com.compass.bankchallenge.domain.Manager;
 import br.com.compass.bankchallenge.domain.User;
 import br.com.compass.bankchallenge.domain.enums.AccessLevel;
+import br.com.compass.bankchallenge.domain.enums.AccountType;
 import br.com.compass.bankchallenge.service.AuthService;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityManagerFactory;
+import jakarta.persistence.Persistence;
 
 public class App {
     
     public static void main(String[] args) {	
-    	
-    	AuthService authService = new AuthService();
-
-        Client client = new Client();
-        client.setName("Usuário Teste");
-        client.setEmail("teste@app.com");
-        client.setPassword("1234");
-        client.setCpf("00000000000");
-        client.setPhone("11999999999");
-        client.setBirthDate(LocalDate.of(1990, 1, 1));
-        client.setAccessLevel(AccessLevel.CLIENT);
-        client.setBlocked(false);
-        client.setFailedLoginAttempts(0);
-
-        System.out.println("== Cadastrando cliente ==");
-        authService.register(client);
-
-
-        Manager manager = new Manager();
-        manager.setName("Gerente Teste");
-        manager.setEmail("gerente@app.com");
-        manager.setPassword("1234");
-
-        manager.setAccessLevel(AccessLevel.MANAGER);
-        manager.setBlocked(false);
-        manager.setFailedLoginAttempts(0);
-
-        System.out.println("\n== Cadastrando gerente ==");
-        authService.register(manager);
-
-
-        System.out.println("\n== Login de Cliente ==");
-        User loggedClient = authService.login("teste@app.com", "1234");
-        System.out.println(loggedClient != null ? "Login bem-sucedido: " + loggedClient.getName() : "Falha no login do cliente.");
-
-        System.out.println("\n== Login de Gerente ==");
-        User loggedManager = authService.login("gerente@app.com", "1234");
-        System.out.println(loggedManager != null ? "Login bem-sucedido: " + loggedManager.getName() : "Falha no login do gerente.");
-        
-        authService.close();
-    	
+    	    	
     	/*
-        AuthService authService = new AuthService();
-
-        Client testClient = new Client();
-        
-        testClient.setName("João Teste");
-        testClient.setEmail("joao@email.com");
-        testClient.setPassword("1234"); 
-        testClient.setCpf("12345678900");
-        testClient.setPhone("11999999999");
-        testClient.setBirthDate(LocalDate.of(1990, 1, 1));
-        testClient.setAccessLevel(AccessLevel.CLIENT);
-        testClient.setBlocked(false);
-        testClient.setFailedLoginAttempts(0);
-
-        authService.register(testClient); 
-        authService.close();
         
         Scanner scanner = new Scanner(System.in);
 
@@ -77,9 +25,48 @@ public class App {
         
         scanner.close();
         System.out.println("Application closed");
+        
         */
     	
+        EntityManagerFactory emf = Persistence.createEntityManagerFactory("exemplo-jpa");
+        EntityManager em = emf.createEntityManager();
+        
+        try {
+            em.getTransaction().begin();
+            
+            Client client = new Client();
+            client.setName("Cliente Teste");
+            client.setEmail("cliente@teste.com");
+            client.setPassword("1234");
+            client.setCpf("11122233344");
+            client.setPhone("11988887777");
+            client.setBirthDate(LocalDate.of(1990, 1, 1));
+            client.setAccessLevel(AccessLevel.CLIENT);
+            
+            em.persist(client);
+            
+            Account account = new Account();
+            account.setAccountNumber("ACC-1001");  
+            account.setBalance(1000.0);          
+            account.setClient(client);
+            account.setAccountType(AccountType.SAVINGS);
+            
+            em.persist(account);
+            
+            em.getTransaction().commit();
+            
+            System.out.println("Cliente e conta criados com sucesso!");
+        } catch (Exception e) {
+            e.printStackTrace();
+            if (em.getTransaction().isActive()) {
+                em.getTransaction().rollback();
+            }
+        } finally {
+            em.close();
+            emf.close();
+        }
     }
+    
 
     public static void mainMenu(Scanner scanner) {
         
@@ -101,8 +88,7 @@ public class App {
                 	loginSection(scanner);
                     return;
                 case 2:
-                    // ToDo...
-                    System.out.println("Account Opening.");
+                    accountOpeningSection(scanner);
                     break;
                 case 0:
                     running = false;
@@ -114,7 +100,10 @@ public class App {
     }
 
     public static void bankMenu(Scanner scanner) {
-        boolean running = true;
+        
+    	accountSelectionSection(scanner);    	
+
+    	boolean running = true;
 
         while (running) {
             System.out.println("========= Bank Menu =========");
@@ -180,6 +169,20 @@ public class App {
         } else {
             System.out.println("Login failed! Check email/password.");
         }
+        
+        authService.close();
     }
+    
+    public static void accountOpeningSection(Scanner scanner) { 
+    	
+        System.out.println("Account Opening.");
+    	
+    }
+    
+    public static void accountSelectionSection(Scanner scanner) {
+    	
+    }
+
+
     
 }

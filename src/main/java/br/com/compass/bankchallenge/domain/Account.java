@@ -1,26 +1,51 @@
 package br.com.compass.bankchallenge.domain;
 
-import java.util.List;
-
 import br.com.compass.bankchallenge.domain.enums.AccountType;
-import br.com.compass.bankchallenge.domain.Statement;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 
-
+@Entity
+@Table(name = "tb_accounts")
 public class Account {
 	
 	@Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
+
+	@Column(name = "account_number", nullable = false, unique = true)
+	private String accountNumber;
+	
+    @Column(nullable = false)
 	private Double balance;
+    
+    @ManyToOne
+    @JoinColumn(name = "client_id", nullable = false)
 	private Client client;
+    
+    @Enumerated(EnumType.STRING)
+    @Column(name = "account_type", nullable = false)
 	private AccountType accountType;
 	
-	private List<Statement> statments;
-	private List<RefundRequest> refundRequests;
+	// private List<Statement> statments;
+	// private List<RefundRequest> refundRequests;
 	
+	public Account() {}
+	
+	public Account(String accountNumber, Double balance, Client client, AccountType accountType) {
+		this.accountNumber = accountNumber;
+		this.balance = balance;
+		this.client = client;
+		this.accountType = accountType;
+	}
+
 	public Long getId() {
 		return id;
 	}
@@ -28,7 +53,15 @@ public class Account {
 	public void setId(Long id) {
 		this.id = id;
 	}
-	
+		
+	public String getAccountNumber() {
+		return accountNumber;
+	}
+
+	public void setAccountNumber(String accountNumber) {
+		this.accountNumber = accountNumber;
+	}
+
 	public Double getBalance() {
 		return balance;
 	}
@@ -51,18 +84,6 @@ public class Account {
 	
 	public void setAccountType(AccountType accountType) {
 		this.accountType = accountType;
-	}
-	
-	public List<Statement> getStatments() {
-		return statments;
-	}
-	
-	public void setStatments(List<Statement> statments) {
-		this.statments = statments;
-	}
-	
-	public List<RefundRequest> getRefundRequests() {
-		return refundRequests;
 	}
 	
 }

@@ -1,8 +1,12 @@
 package br.com.compass.bankchallenge.domain;
 
 import java.time.LocalDate;
+import java.util.List;
 
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrimaryKeyJoinColumn;
 import jakarta.persistence.Table;
 
@@ -11,11 +15,17 @@ import jakarta.persistence.Table;
 @Table(name = "tb_clients")
 public class Client extends User{
 
+    @Column(nullable = false, unique = true)
 	private String cpf;
-	private String phone;
-	private LocalDate birthDate;
+    
+    @Column(nullable = false)
+    private String phone;
+	
+    @Column(name = "birth_date", nullable = false)
+    private LocalDate birthDate;
 
-	//private List<Account> accounts;
+    @OneToMany(mappedBy = "client", cascade = CascadeType.ALL, orphanRemoval = true)
+	private List<Account> accounts;
 	
 	public Client() {}
 
