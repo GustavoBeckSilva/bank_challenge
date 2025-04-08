@@ -1,17 +1,28 @@
 package br.com.compass.bankchallenge.service;
 
+import java.time.LocalDate;
+
 import br.com.compass.bankchallenge.domain.Client;
+import br.com.compass.bankchallenge.domain.enums.AccessLevel;
 import br.com.compass.bankchallenge.repository.ClientRepository;
+import br.com.compass.bankchallenge.repository.UserRepository;
 
 public class ClientService {
 
 	private ClientRepository clientRepository = new ClientRepository();
+	private UserRepository userRepository = new UserRepository();
 
-    public void registerClient(String name, String cpf, String phone) {
-        Client client = new Client();
-        client.setName(name);
-        client.setCpf(cpf);
-        client.setPhone(phone);
-        clientRepository.save(client);
-    }
+	public void registerClient(String name, String email, String password, String cpf, String phone, LocalDate birthDate) {
+
+		if (userRepository.findByEmail(email) != null)
+			throw new IllegalArgumentException("There is already a user with the email provided.");
+
+		Client client = new Client(cpf, phone, birthDate);
+		client.setName(name);
+		client.setEmail(email);
+		client.setPassword(password);
+		client.setAccessLevel(AccessLevel.CLIENT);
+
+		clientRepository.save(client);
+	}
 }

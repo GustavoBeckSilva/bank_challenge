@@ -3,15 +3,14 @@ package br.com.compass.bankchallenge.application;
 import java.time.LocalDate;
 import java.util.Scanner;
 
-import br.com.compass.bankchallenge.domain.Account;
 import br.com.compass.bankchallenge.domain.Client;
 import br.com.compass.bankchallenge.domain.User;
-import br.com.compass.bankchallenge.domain.enums.AccessLevel;
 import br.com.compass.bankchallenge.domain.enums.AccountType;
+import br.com.compass.bankchallenge.repository.UserRepository;
+import br.com.compass.bankchallenge.service.AccountService;
 import br.com.compass.bankchallenge.service.AuthService;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.EntityManagerFactory;
-import jakarta.persistence.Persistence;
+import br.com.compass.bankchallenge.service.ClientService;
+import br.com.compass.bankchallenge.service.ManagerService;
 
 public class App {
     
@@ -28,43 +27,57 @@ public class App {
         
         */
     	
-        EntityManagerFactory emf = Persistence.createEntityManagerFactory("exemplo-jpa");
-        EntityManager em = emf.createEntityManager();
+    	 // Instâncias dos serviços
+        ClientService clientService = new ClientService();
+        ManagerService managerService = new ManagerService();
+        AccountService accountService = new AccountService();
         
+        // Variáveis de teste para os dados das entidades
+        String clientName = "Cliente Teste";
+        String clientEmail = "client@test.com";
+        String clientPassword = "senhaClient";
+        String clientCpf = "12345678901";
+        String clientPhone = "1199998888";
+        LocalDate clientBirthDate = LocalDate.of(1995, 5, 15);
+        
+        String managerName = "Manager Teste";
+        String managerEmail = "manager@test.com";
+        String managerPassword = "senhaManager";
+        
+        String accountNumber = "ACC-001";
+        Double initialBalance = 1000.0;
+        
+        // Registra o Client
         try {
-            em.getTransaction().begin();
-            
-            Client client = new Client();
-            client.setName("Cliente Teste");
-            client.setEmail("cliente@teste.com");
-            client.setPassword("1234");
-            client.setCpf("11122233344");
-            client.setPhone("11988887777");
-            client.setBirthDate(LocalDate.of(1990, 1, 1));
-            client.setAccessLevel(AccessLevel.CLIENT);
-            
-            em.persist(client);
-            
-            Account account = new Account();
-            account.setAccountNumber("ACC-1001");  
-            account.setBalance(1000.0);          
-            account.setClient(client);
-            account.setAccountType(AccountType.SAVINGS);
-            
-            em.persist(account);
-            
-            em.getTransaction().commit();
-            
-            System.out.println("Cliente e conta criados com sucesso!");
-        } catch (Exception e) {
-            e.printStackTrace();
-            if (em.getTransaction().isActive()) {
-                em.getTransaction().rollback();
-            }
-        } finally {
-            em.close();
-            emf.close();
+            clientService.registerClient(clientName, clientEmail, clientPassword, clientCpf, clientPhone, clientBirthDate);
+            System.out.println("Client registered successfully.");
+        } catch (IllegalArgumentException e) {
+            System.out.println("Client registration failed: " + e.getMessage());
         }
+        
+        // Registra o Manager
+        try {
+            managerService.registerManager(managerName, managerEmail, managerPassword);
+            System.out.println("Manager registered successfully.");
+        } catch (IllegalArgumentException e) {
+            System.out.println("Manager registration failed: " + e.getMessage());
+        }
+        
+        // Para criar uma conta, precisamos do Client salvo.
+        // Usamos o UserRepository para recuperar o client pelo e-mail.
+        UserRepository userRepository = new UserRepository();
+        Client client = (Client) userRepository.findByEmail(clientEmail);
+        
+        if (client != null) {
+            accountService.registerAccount(accountNumber, initialBalance, client, AccountType.SAVINGS);
+            System.out.println("Account registered successfully for client: " + client.getName());
+        } else {
+            System.out.println("Client not found. Account registration aborted.");
+        }
+        
+        // Teste simples concluído
+        System.out.println("Test finished.");
+       
     }
     
 
