@@ -1,9 +1,12 @@
 package br.com.compass.bankchallenge.service;
 
-import br.com.compass.bankchallenge.domain.Client;
 import br.com.compass.bankchallenge.domain.User;
 import br.com.compass.bankchallenge.util.SecurityUtil;
-import jakarta.persistence.*;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityManagerFactory;
+import jakarta.persistence.EntityTransaction;
+import jakarta.persistence.NoResultException;
+import jakarta.persistence.Persistence;
 
 public class AuthService {
 
@@ -14,11 +17,11 @@ public class AuthService {
         User user = null;
 
         try {
-            user = em.createQuery("SELECT c FROM Client c WHERE c.email = :email", User.class)
+            user = em.createQuery("SELECT u FROM User u WHERE u.email = :email", User.class)
                      .setParameter("email", email)
                      .getSingleResult();
         } catch (NoResultException e) {
-            System.out.println("❌ User not found");
+            System.out.println("User not found");
             em.close();
             return null;
         }
@@ -40,7 +43,7 @@ public class AuthService {
             em.close();
             return user;
         } else {
-            int attempts = user.getFailedLoginAttempts() + 1;
+            int attempts = (user.getFailedLoginAttempts() == null ? 0 : user.getFailedLoginAttempts()) + 1;
             user.setFailedLoginAttempts(attempts);
             if (attempts >= 3) {
                 user.setBlocked(true);
@@ -56,17 +59,17 @@ public class AuthService {
 
     public void register(User user) {
         EntityManager em = emf.createEntityManager();
-        EntityTransaction transaction = em.getTransaction();
+        EntityTransaction tx = em.getTransaction();
 
         try {
-            transaction.begin();
-            user.setPassword(SecurityUtil.hashPassword(user.getPassword())); // hash antes de persistir
+            tx.begin();
+            user.setPassword(SecurityUtil.hashPassword(user.getPassword()));
             em.persist(user);
-            transaction.commit();
+            tx.commit();
             System.out.println("User registered successfully: " + user.getEmail());
         } catch (Exception e) {
-            if (transaction.isActive()) {
-                transaction.rollback();
+            if (tx.isActive()) {
+                tx.rollback();
             }
             e.printStackTrace();
             System.out.println("Error during registration.");

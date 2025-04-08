@@ -1,12 +1,13 @@
 package br.com.compass.bankchallenge.domain;
 
 import java.time.LocalDate;
-import java.util.List;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.PrimaryKeyJoinColumn;
 import jakarta.persistence.Table;
 
 @Entity
+@PrimaryKeyJoinColumn(name = "id", referencedColumnName = "id")
 @Table(name = "tb_clients")
 public class Client extends User{
 

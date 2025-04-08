@@ -4,7 +4,9 @@ import jakarta.persistence.*;
 
 import br.com.compass.bankchallenge.domain.enums.AccessLevel;
 
-@MappedSuperclass
+@Entity
+@Inheritance(strategy = InheritanceType.JOINED)
+@Table(name = "tb_users", uniqueConstraints = { @UniqueConstraint(columnNames = "email")})
 public abstract class User {
 	
 	@Id
@@ -17,10 +19,12 @@ public abstract class User {
 	@Column(nullable = false)
 	private String password;
 	
-	private Integer failedLoginAttempts;
+	private Integer failedLoginAttempts = 0;
 
 	private String name;
-	private boolean blocked;
+
+	@Column(nullable = false, columnDefinition = "TINYINT(1) default 0")
+	private Boolean blocked = false;
 	private AccessLevel accessLevel;
 	
 	public Long getId() {
