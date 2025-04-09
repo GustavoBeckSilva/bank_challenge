@@ -7,10 +7,14 @@ import java.util.Scanner;
 
 import br.com.compass.bankchallenge.domain.Account;
 import br.com.compass.bankchallenge.domain.Client;
+import br.com.compass.bankchallenge.domain.User;
+import br.com.compass.bankchallenge.domain.enums.AccessLevel;
 import br.com.compass.bankchallenge.domain.enums.AccountType;
 import br.com.compass.bankchallenge.service.AccountService;
+import br.com.compass.bankchallenge.service.AuthService;
 import br.com.compass.bankchallenge.service.ClientService;
 import br.com.compass.bankchallenge.service.UserService;
+import br.com.compass.bankchallenge.util.JPAUtil;
 
 public class App {
     
@@ -23,6 +27,8 @@ public class App {
         scanner.close();
         
         System.out.println("Application closed");
+        JPAUtil.shutdown();
+
         
     }
     
@@ -44,7 +50,7 @@ public class App {
 
             switch (option) {
                 case 1:
-  //              	loginSection(scanner);
+                	loginSection(scanner);
                     return;
                 case 2:
                     accountOpeningSection(scanner);
@@ -107,28 +113,53 @@ public class App {
         }
     }
     
-/*    public static void loginSection(Scanner scanner) {
-
+    public static void managementMenu(Scanner scanner) {
+    	System.out.println("========= Management Menu =========");
+        System.out.println("|| 1. Management                ||");
+        System.out.println("|| 2. Operation                 ||");
+        System.out.println("|| 0. Example                   ||");
+        System.out.println("=============================");
+        System.out.print("Choose an option: ");
+        
+        scanner.nextLine();
+        return;
+    }
+    
+    public static void loginSection(Scanner scanner) {
+        
     	AuthService authService = new AuthService();
 
-    	System.out.println("\n=== Login ===");
-        System.out.print("Enter your login (email): ");
-        String email = scanner.nextLine();
+        try {
+        	
+            System.out.println("\n=== Login ===");
+            System.out.print("Enter your login (email): ");
+            String email = scanner.nextLine().trim();
 
-        System.out.print("Enter password: ");
-        String password = scanner.nextLine();
+            System.out.print("Enter password: ");
+            String password = scanner.nextLine();
 
-        User loggedUser = authService.login(email, password);
+            User loggedUser = authService.login(email, password);
 
-        if (loggedUser != null) {
-            System.out.println("Login successful! Welcome, " + loggedUser.getName());
-        	bankMenu(scanner);
-        } else {
-            System.out.println("Login failed! Check email/password.");
+            if (loggedUser != null) {
+                
+            	System.out.println("Login successful! Welcome, " + loggedUser.getName());
+
+                if (loggedUser.getAccessLevel() == AccessLevel.MANAGER) 
+                    managementMenu(scanner);
+                 
+                else
+                    bankMenu(scanner);
+                
+            } 
+            
+            else
+                System.out.println("Login failed! Check email/password.");
+            
+        } catch (Exception e) {
+            System.out.println("An unexpected error occurred during login.");
+            e.printStackTrace();
         }
-        
-        authService.close();
-    } */
+    }
     
     public static void accountOpeningSection(Scanner scanner) { 
     	
@@ -174,28 +205,34 @@ public class App {
             scanner.nextLine(); 
             
             AccountType accountType;
-            if (accountTypeChoice == 1) {
+            
+            if (accountTypeChoice == 1) 
                 accountType = AccountType.CHECKING;
-            } else if (accountTypeChoice == 2) {
+            
+            else if (accountTypeChoice == 2)
                 accountType = AccountType.SAVINGS;
-            } else if (accountTypeChoice == 3) {
+            
+            else if (accountTypeChoice == 3)
                 accountType = AccountType.PAYROLL;
-            } else {
+            
+            else {
                 System.out.println("Invalid account type selected. Defaulting to checking.");
                 accountType = AccountType.CHECKING;
             }
             
             ClientService clientService = new ClientService();
+            
             try {
                 clientService.registerClient(name, email, password, cpf, phone, birthDate);
-                
+
                 Client client = (Client) userService.getUserByEmail(email);
+                
                 Account newAccount = new Account(client, accountType);
                 client.addAccount(newAccount);
-                
+
                 AccountService accountService = new AccountService();
                 accountService.registerAccount(client, accountType);
-                
+
                 System.out.println("Account creation successful! Your client registration is complete.");
                 
             } catch (IllegalArgumentException e) {
@@ -210,11 +247,12 @@ public class App {
             System.out.print("Do you want to log in now to open a new linked account? (y/n): ");
             String answer = scanner.nextLine().trim().toLowerCase();
             
-            if (answer.equals("y") || answer.equals("yes")) {
-                System.out.println("Login section..."); // To do
-            } else {
+            if (answer.equals("y") || answer.equals("yes"))
+            	loginSection(scanner);
+            
+            else
                 System.out.println("Returning to the main menu...");
-            }
+            
         }
     }
         

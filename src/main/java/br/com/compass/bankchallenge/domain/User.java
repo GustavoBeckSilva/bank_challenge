@@ -9,6 +9,14 @@ import br.com.compass.bankchallenge.domain.enums.AccessLevel;
 @Table(name = "tb_users", uniqueConstraints = { @UniqueConstraint(columnNames = "email")})
 public abstract class User {
 	
+	public User() {	}
+	
+	public User(String name, String email, String password) {
+		this.email = email;
+		this.password = password;
+		this.name = name;
+	}
+
 	@Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;

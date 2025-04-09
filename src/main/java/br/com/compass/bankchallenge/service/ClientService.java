@@ -9,8 +9,8 @@ import br.com.compass.bankchallenge.repository.UserRepository;
 
 public class ClientService {
 
-	private ClientRepository clientRepository = new ClientRepository();
 	private UserRepository userRepository = new UserRepository();
+	private AuthService authService = new AuthService();
 
 	public void registerClient(String name, String email, String password, String cpf, String phone, LocalDate birthDate) {
 
@@ -23,6 +23,7 @@ public class ClientService {
 		client.setPassword(password);
 		client.setAccessLevel(AccessLevel.CLIENT);
 
-		clientRepository.save(client);
+		authService.register(client);
 	}
+
 }

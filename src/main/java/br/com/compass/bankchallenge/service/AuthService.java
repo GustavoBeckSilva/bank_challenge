@@ -1,19 +1,16 @@
 package br.com.compass.bankchallenge.service;
 
 import br.com.compass.bankchallenge.domain.User;
+import br.com.compass.bankchallenge.util.JPAUtil;
 import br.com.compass.bankchallenge.util.SecurityUtil;
 import jakarta.persistence.EntityManager;
-import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.EntityTransaction;
 import jakarta.persistence.NoResultException;
-import jakarta.persistence.Persistence;
 
 public class AuthService {
 
-    private EntityManagerFactory emf = Persistence.createEntityManagerFactory("exemplo-jpa");
-
     public User login(String email, String password) {
-        EntityManager em = emf.createEntityManager();
+        EntityManager em = JPAUtil.getEntityManagerFactory().createEntityManager();
         User user = null;
 
         try {
@@ -58,7 +55,7 @@ public class AuthService {
     }
 
     public void register(User user) {
-        EntityManager em = emf.createEntityManager();
+        EntityManager em = JPAUtil.getEntityManagerFactory().createEntityManager();
         EntityTransaction tx = em.getTransaction();
 
         try {
@@ -76,10 +73,6 @@ public class AuthService {
         } finally {
             em.close();
         }
-    }
-
-    public void close() {
-        emf.close();
     }
     
 }

@@ -29,7 +29,16 @@ public class Client extends User{
     @OneToMany(mappedBy = "client", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
 	private List<Account> accounts = new ArrayList<>();
 	
-	public Client() {}
+	public Client() {
+		super();
+	}
+	
+	public Client(String name, String email, String password, String cpf, String phone, LocalDate birthDate) {
+	    super(name, email, password);
+	    this.cpf = cpf;
+	    this.phone = phone;
+	    this.birthDate = birthDate;
+	}	
 
 	public Client(String cpf, String phone, LocalDate birthDate) {
 		super();
