@@ -5,6 +5,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.Scanner;
 
+import br.com.compass.bankchallenge.config.DatabaseInitializer;
 import br.com.compass.bankchallenge.domain.Account;
 import br.com.compass.bankchallenge.domain.Client;
 import br.com.compass.bankchallenge.domain.User;
@@ -20,6 +21,8 @@ public class App {
     
     public static void main(String[] args) {	
     	
+        DatabaseInitializer.loadInitialManager();
+    	
         Scanner scanner = new Scanner(System.in);
 
         mainMenu(scanner);
@@ -29,7 +32,6 @@ public class App {
         System.out.println("Application closed");
         JPAUtil.shutdown();
 
-        
     }
     
 
