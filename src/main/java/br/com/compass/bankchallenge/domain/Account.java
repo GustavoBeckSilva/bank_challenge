@@ -1,5 +1,7 @@
 package br.com.compass.bankchallenge.domain;
 
+import java.util.UUID;
+
 import br.com.compass.bankchallenge.domain.enums.AccountType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -45,6 +47,13 @@ public class Account {
 		this.client = client;
 		this.accountType = accountType;
 	}
+	
+	public Account(Client client, AccountType accountType) {
+        this.client = client;
+        this.accountType = accountType;
+        this.balance = 0.0;
+        this.accountNumber = generateAccountNumber();
+    }
 
 	public Long getId() {
 		return id;
@@ -85,5 +94,11 @@ public class Account {
 	public void setAccountType(AccountType accountType) {
 		this.accountType = accountType;
 	}
+	
+	// Specific methods
+	
+	private String generateAccountNumber() {
+        return UUID.randomUUID().toString().substring(0, 8);
+    }
 	
 }

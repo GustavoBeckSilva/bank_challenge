@@ -1,83 +1,29 @@
 package br.com.compass.bankchallenge.application;
 
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.Scanner;
 
+import br.com.compass.bankchallenge.domain.Account;
 import br.com.compass.bankchallenge.domain.Client;
-import br.com.compass.bankchallenge.domain.User;
 import br.com.compass.bankchallenge.domain.enums.AccountType;
-import br.com.compass.bankchallenge.repository.UserRepository;
 import br.com.compass.bankchallenge.service.AccountService;
-import br.com.compass.bankchallenge.service.AuthService;
 import br.com.compass.bankchallenge.service.ClientService;
-import br.com.compass.bankchallenge.service.ManagerService;
+import br.com.compass.bankchallenge.service.UserService;
 
 public class App {
     
     public static void main(String[] args) {	
-    	    	
-    	/*
-        
+    	
         Scanner scanner = new Scanner(System.in);
 
         mainMenu(scanner);
         
         scanner.close();
+        
         System.out.println("Application closed");
         
-        */
-    	
-    	 // Instâncias dos serviços
-        ClientService clientService = new ClientService();
-        ManagerService managerService = new ManagerService();
-        AccountService accountService = new AccountService();
-        
-        // Variáveis de teste para os dados das entidades
-        String clientName = "Cliente Teste";
-        String clientEmail = "client@test.com";
-        String clientPassword = "senhaClient";
-        String clientCpf = "12345678901";
-        String clientPhone = "1199998888";
-        LocalDate clientBirthDate = LocalDate.of(1995, 5, 15);
-        
-        String managerName = "Manager Teste";
-        String managerEmail = "manager@test.com";
-        String managerPassword = "senhaManager";
-        
-        String accountNumber = "ACC-001";
-        Double initialBalance = 1000.0;
-        
-        // Registra o Client
-        try {
-            clientService.registerClient(clientName, clientEmail, clientPassword, clientCpf, clientPhone, clientBirthDate);
-            System.out.println("Client registered successfully.");
-        } catch (IllegalArgumentException e) {
-            System.out.println("Client registration failed: " + e.getMessage());
-        }
-        
-        // Registra o Manager
-        try {
-            managerService.registerManager(managerName, managerEmail, managerPassword);
-            System.out.println("Manager registered successfully.");
-        } catch (IllegalArgumentException e) {
-            System.out.println("Manager registration failed: " + e.getMessage());
-        }
-        
-        // Para criar uma conta, precisamos do Client salvo.
-        // Usamos o UserRepository para recuperar o client pelo e-mail.
-        UserRepository userRepository = new UserRepository();
-        Client client = (Client) userRepository.findByEmail(clientEmail);
-        
-        if (client != null) {
-            accountService.registerAccount(accountNumber, initialBalance, client, AccountType.SAVINGS);
-            System.out.println("Account registered successfully for client: " + client.getName());
-        } else {
-            System.out.println("Client not found. Account registration aborted.");
-        }
-        
-        // Teste simples concluído
-        System.out.println("Test finished.");
-       
     }
     
 
@@ -98,7 +44,7 @@ public class App {
 
             switch (option) {
                 case 1:
-                	loginSection(scanner);
+  //              	loginSection(scanner);
                     return;
                 case 2:
                     accountOpeningSection(scanner);
@@ -114,8 +60,6 @@ public class App {
 
     public static void bankMenu(Scanner scanner) {
         
-    	accountSelectionSection(scanner);    	
-
     	boolean running = true;
 
         while (running) {
@@ -163,7 +107,7 @@ public class App {
         }
     }
     
-    public static void loginSection(Scanner scanner) {
+/*    public static void loginSection(Scanner scanner) {
 
     	AuthService authService = new AuthService();
 
@@ -184,18 +128,94 @@ public class App {
         }
         
         authService.close();
-    }
+    } */
     
     public static void accountOpeningSection(Scanner scanner) { 
     	
-        System.out.println("Account Opening.");
-    	
-    }
-    
-    public static void accountSelectionSection(Scanner scanner) {
-    	
-    }
+        System.out.println("\n=== Account Opening ===");
+        System.out.print("Enter your email: ");
+        String email = scanner.nextLine().trim();
 
+        UserService userService = new UserService();
+        
+        if (userService.getUserByEmail(email) == null) {
 
-    
+            System.out.print("Enter your name: ");
+            String name = scanner.nextLine();
+            
+            System.out.print("Enter a password: ");
+            String password = scanner.nextLine();
+            
+            System.out.print("Enter your CPF: ");
+            String cpf = scanner.nextLine();
+            
+            System.out.print("Enter your phone number: ");
+            String phone = scanner.nextLine();
+            
+            LocalDate birthDate = null;
+
+            while (birthDate == null) {
+                System.out.print("Enter your date of birth (dd/MM/yyyy): ");
+                String birthDateStr = scanner.nextLine();
+                try {
+                    DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+                    birthDate = LocalDate.parse(birthDateStr, dtf);
+                } catch (DateTimeParseException e) {
+                    System.out.println("Invalid date format! Please try again.");
+                }
+            }
+            
+            System.out.println("Select account type:");
+            System.out.println("1. Checking");
+            System.out.println("2. Savings");
+            System.out.println("3. Payroll");
+            
+            int accountTypeChoice = scanner.nextInt();
+            scanner.nextLine(); 
+            
+            AccountType accountType;
+            if (accountTypeChoice == 1) {
+                accountType = AccountType.CHECKING;
+            } else if (accountTypeChoice == 2) {
+                accountType = AccountType.SAVINGS;
+            } else if (accountTypeChoice == 3) {
+                accountType = AccountType.PAYROLL;
+            } else {
+                System.out.println("Invalid account type selected. Defaulting to checking.");
+                accountType = AccountType.CHECKING;
+            }
+            
+            ClientService clientService = new ClientService();
+            try {
+                clientService.registerClient(name, email, password, cpf, phone, birthDate);
+                
+                Client client = (Client) userService.getUserByEmail(email);
+                Account newAccount = new Account(client, accountType);
+                client.addAccount(newAccount);
+                
+                AccountService accountService = new AccountService();
+                accountService.registerAccount(client, accountType);
+                
+                System.out.println("Account creation successful! Your client registration is complete.");
+                
+            } catch (IllegalArgumentException e) {
+                System.out.println("Error creating account: " + e.getMessage());
+            }
+            
+        } 
+        
+        else {
+
+            System.out.println("There is already a user with that email.");
+            System.out.print("Do you want to log in now to open a new linked account? (y/n): ");
+            String answer = scanner.nextLine().trim().toLowerCase();
+            
+            if (answer.equals("y") || answer.equals("yes")) {
+                System.out.println("Login section..."); // To do
+            } else {
+                System.out.println("Returning to the main menu...");
+            }
+        }
+    }
+        
 }

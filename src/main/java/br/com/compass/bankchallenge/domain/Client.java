@@ -1,11 +1,13 @@
 package br.com.compass.bankchallenge.domain;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrimaryKeyJoinColumn;
 import jakarta.persistence.Table;
@@ -24,8 +26,8 @@ public class Client extends User{
     @Column(name = "birth_date", nullable = false)
     private LocalDate birthDate;
 
-    @OneToMany(mappedBy = "client", cascade = CascadeType.ALL, orphanRemoval = true)
-	private List<Account> accounts;
+    @OneToMany(mappedBy = "client", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+	private List<Account> accounts = new ArrayList<>();
 	
 	public Client() {}
 
@@ -60,8 +62,15 @@ public class Client extends User{
 		this.birthDate = birthDate;
 	}
 
-/*	public List<Account> getAccounts() {
+	public List<Account> getAccounts() {
 		return accounts;
 	}
-*/	
+	
+	// Specific methods
+	
+	public void addAccount(Account account) {
+		this.accounts.add(account);
+        account.setClient(this);
+    }
+
 }

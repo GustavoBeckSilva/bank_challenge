@@ -14,4 +14,9 @@ public class AccountService {
         accountRepository.save(account);
     }
     
+    public void registerAccount(Client client, AccountType accountType) {
+        Account account = new Account(client, accountType);
+        accountRepository.save(account);
+    }
+    
 }
