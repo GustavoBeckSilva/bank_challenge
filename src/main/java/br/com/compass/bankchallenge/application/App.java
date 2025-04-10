@@ -14,6 +14,7 @@ import br.com.compass.bankchallenge.domain.enums.AccountType;
 import br.com.compass.bankchallenge.service.AccountService;
 import br.com.compass.bankchallenge.service.AuthService;
 import br.com.compass.bankchallenge.service.ClientService;
+import br.com.compass.bankchallenge.service.OperationService;
 import br.com.compass.bankchallenge.service.UserService;
 import br.com.compass.bankchallenge.util.JPAUtil;
 
@@ -35,7 +36,7 @@ public class App {
     }
     
 
-    public static void mainMenu(Scanner scanner) {
+    public static void mainMenu(Scanner scanner) {	// Feito
         
     	boolean running = true;
 
@@ -66,7 +67,7 @@ public class App {
         }
     }
 
-    public static void bankMenu(Scanner scanner) {
+    public static void bankMenu(Scanner scanner) {	// Falta
         
     	boolean running = true;
 
@@ -85,20 +86,17 @@ public class App {
 
             switch (option) {
                 case 1:
-                    // ToDo...
-                    System.out.println("Deposit.");
+                	depositSection(scanner);
                     break;
                 case 2:
-                    // ToDo...
-                    System.out.println("Withdraw.");
+                	withdrawSection(scanner);
                     break;
                 case 3:
                     // ToDo...
                     System.out.println("Check Balance.");
                     break;
                 case 4:
-                    // ToDo...
-                    System.out.println("Transfer.");
+                	transferSection(scanner);
                     break;
                 case 5:
                     // ToDo...
@@ -115,7 +113,7 @@ public class App {
         }
     }
     
-    public static void managementMenu(Scanner scanner) {
+    public static void managementMenu(Scanner scanner) { // Falta -- Lembrar de gerente master
     	System.out.println("========= Management Menu =========");
         System.out.println("|| 1. Management                ||");
         System.out.println("|| 2. Operation                 ||");
@@ -127,8 +125,8 @@ public class App {
         return;
     }
     
-    public static void loginSection(Scanner scanner) {
-        
+    public static void loginSection(Scanner scanner) {	// Feito -- Lembrar de lógica de tentativas de login 
+        												// Lembrar de lógica de passar usuário por parâmetro para salvar a sessão
     	AuthService authService = new AuthService();
 
         try {
@@ -163,7 +161,7 @@ public class App {
         }
     }
     
-    public static void accountOpeningSection(Scanner scanner) { 
+    public static void accountOpeningSection(Scanner scanner) { // Feito
     	
         System.out.println("\n=== Account Opening ===");
         System.out.print("Enter your email: ");
@@ -257,5 +255,78 @@ public class App {
             
         }
     }
+    
+    public static void depositSection(Scanner scanner) { // Feito
+    	
+        System.out.println("Deposit.");
+       
+        try {
+
+            scanner.nextLine();
+        	
+            System.out.print("Enter account id: ");
+            Long accountId = Long.parseLong(scanner.nextLine().trim());
+            
+            System.out.print("Enter deposit amount: ");
+            Double amount = Double.parseDouble(scanner.nextLine().trim());
+
+            OperationService operationService = new OperationService();
+            operationService.deposit(accountId, amount);
+            
+            System.out.println("Deposit successful!");
+        } catch (Exception e) {
+            System.out.println("Error during deposit: " + e.getMessage());
+        }
         
+    }
+    
+    public static void withdrawSection(Scanner scanner) { // Feito
+    	
+    	System.out.println("\n=== Withdraw ===");
+        try {
+        	
+            scanner.nextLine();
+
+            System.out.print("Enter account id: ");
+            Long accountId = Long.parseLong(scanner.nextLine().trim());
+            
+            System.out.print("Enter withdrawal amount: ");
+            Double amount = Double.parseDouble(scanner.nextLine().trim());
+            
+            OperationService operationService = new OperationService();
+            operationService.withdrawal(accountId, amount);
+            
+            System.out.println("Withdrawal successful!");
+        } catch (Exception e) {
+            System.out.println("Error during withdrawal: " + e.getMessage());
+        }
+    }
+
+    public static void transferSection(Scanner scanner) { // Feito
+    	
+    	System.out.println("\n=== Transfer ===");
+        try {
+
+            scanner.nextLine();
+
+            System.out.print("Enter source account id: ");
+            Long sourceAccountId = Long.parseLong(scanner.nextLine().trim());
+            
+            System.out.print("Enter destination account id: ");
+            Long destinationAccountId = Long.parseLong(scanner.nextLine().trim());
+            
+            System.out.print("Enter transfer amount: ");
+            Double amount = Double.parseDouble(scanner.nextLine().trim());
+            
+            OperationService operationService = new OperationService();
+            operationService.transfer(sourceAccountId, destinationAccountId, amount);
+            
+            System.out.println("Transfer successful!");
+        } catch (Exception e) {
+            System.out.println("Error during transfer: " + e.getMessage());
+        }
+
+    }
+
+    
 }

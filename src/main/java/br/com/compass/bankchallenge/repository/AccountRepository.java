@@ -8,12 +8,21 @@ import jakarta.persistence.TypedQuery;
 
 public class AccountRepository {
 
-    public void save(Account account) {
-        EntityManager em = JPAUtil.getEntityManagerFactory().createEntityManager();
+    public Account save(Account account) {
+    	EntityManager em = JPAUtil.getEntityManagerFactory().createEntityManager();
         try {
-            em.getTransaction().begin();
-            em.persist(account);
+            
+        	em.getTransaction().begin();
+            
+            if (account.getId() == null)
+                em.persist(account);
+            
+            else
+                account = em.merge(account);
+            
             em.getTransaction().commit();
+            return account;
+            
         } finally {
             em.close();
         }

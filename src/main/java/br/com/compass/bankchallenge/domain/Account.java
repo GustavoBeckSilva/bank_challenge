@@ -1,8 +1,11 @@
 package br.com.compass.bankchallenge.domain;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 import br.com.compass.bankchallenge.domain.enums.AccountType;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -12,6 +15,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 
 @Entity
@@ -38,6 +42,9 @@ public class Account {
 	
 	// private List<Statement> statments;
 	// private List<RefundRequest> refundRequests;
+    
+    @OneToMany(mappedBy = "account", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Operation> operations = new ArrayList<>();
 	
 	public Account() {}
 	
@@ -95,10 +102,24 @@ public class Account {
 		this.accountType = accountType;
 	}
 	
+	public List<Operation> getOperations() {
+        return operations;
+    }
+	
 	// Specific methods
 	
 	private String generateAccountNumber() {
         return UUID.randomUUID().toString().substring(0, 8);
+    }
+	
+	public void addOperation(Operation operation) {
+        operations.add(operation);
+        operation.setAccount(this);
+    }
+    
+    public void removeOperation(Operation operation) {
+        operations.remove(operation);
+        operation.setAccount(null);
     }
 	
 }
