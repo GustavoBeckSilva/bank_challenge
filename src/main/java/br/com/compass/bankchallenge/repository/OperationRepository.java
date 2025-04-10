@@ -43,5 +43,19 @@ public class OperationRepository {
             em.close();
         }
     }
+    
+    public List<Operation> findByTargetAccountId(Long targetAccountId) {
+        EntityManager em = JPAUtil.getEntityManagerFactory().createEntityManager();
+        try {
+            TypedQuery<Operation> query = em.createQuery(
+                "SELECT o FROM Operation o WHERE o.targetAccount.id = :targetAccountId", Operation.class);
+            query.setParameter("targetAccountId", targetAccountId);
+            return query.getResultList();
+        } catch (NoResultException e) {
+            return null;
+        } finally {
+            em.close();
+        }
+    }
 	
 }

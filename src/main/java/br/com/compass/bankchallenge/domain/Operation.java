@@ -26,6 +26,10 @@ public class Operation {
     @JoinColumn(name = "account_id")
     private Account account;
 	
+	@ManyToOne
+	@JoinColumn(name = "target_account_id")
+	private Account targetAccount;
+	
 	@Enumerated(EnumType.STRING)
 	@Column(length = 50)
     private OperationType operationType;
@@ -74,6 +78,14 @@ public class Operation {
 
 	public void setOperationDate(LocalDateTime operationDate) {
 		this.operationDate = operationDate;
+	}
+	
+	public Account getTargetAccount() {
+		return targetAccount;
+	}
+	
+	public void setTargetAccount(Account targetAccount) {
+		this.targetAccount = targetAccount;
 	}
     	
 }

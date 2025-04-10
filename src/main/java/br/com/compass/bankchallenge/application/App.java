@@ -8,13 +8,17 @@ import java.util.Scanner;
 import br.com.compass.bankchallenge.config.DatabaseInitializer;
 import br.com.compass.bankchallenge.domain.Account;
 import br.com.compass.bankchallenge.domain.Client;
+import br.com.compass.bankchallenge.domain.Manager;
 import br.com.compass.bankchallenge.domain.User;
 import br.com.compass.bankchallenge.domain.enums.AccessLevel;
 import br.com.compass.bankchallenge.domain.enums.AccountType;
+import br.com.compass.bankchallenge.domain.enums.RefundStatus;
+import br.com.compass.bankchallenge.repository.RefundRequestRepository;
 import br.com.compass.bankchallenge.service.AccountService;
 import br.com.compass.bankchallenge.service.AuthService;
 import br.com.compass.bankchallenge.service.ClientService;
 import br.com.compass.bankchallenge.service.OperationService;
+import br.com.compass.bankchallenge.service.RefundRequestService;
 import br.com.compass.bankchallenge.service.UserService;
 import br.com.compass.bankchallenge.util.JPAUtil;
 
@@ -35,7 +39,9 @@ public class App {
 
     }
     
-
+    
+// Public
+    
     public static void mainMenu(Scanner scanner) {	// Feito
         
     	boolean running = true;
@@ -52,9 +58,15 @@ public class App {
             scanner.nextLine();
 
             switch (option) {
-                case 1:
-                	loginSection(scanner);
-                    return;
+            	case 1:
+	                User user = loginSection(scanner);
+	                if (user != null) {
+	                    if (user.getAccessLevel() == AccessLevel.MANAGER)
+	                        managementMenu(scanner, (Manager) user);
+	                    else
+	                        bankMenu(scanner, (Client) user);
+	                }
+                	break;
                 case 2:
                     accountOpeningSection(scanner);
                     break;
@@ -66,8 +78,111 @@ public class App {
             }
         }
     }
+    
+    public static User loginSection(Scanner scanner) {
+        AuthService authService = new AuthService();
 
-    public static void bankMenu(Scanner scanner) {	// Falta
+        try {
+            System.out.println("\n=== Login ===");
+            System.out.print("Enter your login (email): ");
+            String email = scanner.nextLine().trim();
+
+            System.out.print("Enter password: ");
+            String password = scanner.nextLine();
+
+            User loggedUser = authService.login(email, password);
+
+            if (loggedUser != null) {
+                System.out.println("Login successful! Welcome, " + loggedUser.getName());
+                return loggedUser;
+            } else {
+                System.out.println("Login failed! Check email/password.");
+                return null;
+            }
+
+        } catch (Exception e) {
+            System.out.println("An unexpected error occurred during login.");
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+// Management
+    
+    public static void managementMenu(Scanner scanner, Manager manager) { // Falta -- Lembrar de gerente master
+    	
+    	boolean running = true;
+
+        while (running) {
+            System.out.println("========= Management Menu =========");
+	        System.out.println("|| 1. Pending refund requests    ||");
+            System.out.println("|| 0. Exit                       ||");
+            System.out.println("===================================");
+            System.out.print("Choose an option: ");
+
+            int option = scanner.nextInt();
+
+            switch (option) {
+                case 1:
+                	managerRefundRequestSection(scanner, manager);
+                    break;
+                case 0:
+                    System.out.println("Exiting...");
+                    running = false;
+                    return;
+                default:
+                    System.out.println("Invalid option! Please try again.");
+            }
+        }
+    }
+    
+    public static void managerRefundRequestSection(Scanner scanner, Manager manager) {
+        RefundRequestService refundRequestService = new RefundRequestService();
+        RefundRequestRepository refundRequestRepository = new RefundRequestRepository();
+
+        var pendingRequests = refundRequestRepository.findByStatus(RefundStatus.PENDING);
+
+        if (pendingRequests == null || pendingRequests.isEmpty()) {
+            System.out.println("There are no pending refund requests.");
+            return;
+        }
+
+        System.out.println("\n=== Pending Refund Requests ===");
+        for (var request : pendingRequests) {
+            System.out.printf("ID: %d | Operation ID: %d | Client ID: %d | Requested on: %s%n",
+                    request.getId(),
+                    request.getOperation().getId(),
+                    request.getClient().getId(),
+                    request.getRequestDate());
+        }
+
+        System.out.print("Enter the ID of the refund request to process (or 0 to cancel): ");
+        Long requestId = scanner.nextLong();
+        scanner.nextLine();
+
+        if (requestId == 0) return;
+
+        System.out.print("Approve this refund? (y/n): ");
+        String input = scanner.nextLine().trim().toLowerCase();
+
+        try {
+            if (input.equals("y") || input.equals("yes")) {
+                refundRequestService.approveRefund(manager, requestId);
+                System.out.println("Refund approved successfully.");
+            } else if (input.equals("n") || input.equals("no")) {
+                refundRequestService.rejectRefund(manager, requestId);
+                System.out.println("Refund rejected successfully.");
+            } else {
+                System.out.println("Invalid choice.");
+            }
+        } catch (Exception e) {
+            System.out.println("Error processing refund: " + e.getMessage());
+        }
+    }
+    
+// Client
+    
+    public static void bankMenu(Scanner scanner, Client client) {	// Falta
         
     	boolean running = true;
 
@@ -78,6 +193,7 @@ public class App {
             System.out.println("|| 3. Check Balance        ||");
             System.out.println("|| 4. Transfer             ||");
             System.out.println("|| 5. Bank Statement       ||");
+            System.out.println("|| 6. Refund request list  ||");
             System.out.println("|| 0. Exit                 ||");
             System.out.println("=============================");
             System.out.print("Choose an option: ");
@@ -102,6 +218,9 @@ public class App {
                     // ToDo...
                     System.out.println("Bank Statement.");
                     break;
+                case 6:
+                	clientRefundRequestSection(scanner, client.getId());
+                    break;
                 case 0:
                     // ToDo...
                     System.out.println("Exiting...");
@@ -110,54 +229,6 @@ public class App {
                 default:
                     System.out.println("Invalid option! Please try again.");
             }
-        }
-    }
-    
-    public static void managementMenu(Scanner scanner) { // Falta -- Lembrar de gerente master
-    	System.out.println("========= Management Menu =========");
-        System.out.println("|| 1. Management                ||");
-        System.out.println("|| 2. Operation                 ||");
-        System.out.println("|| 0. Example                   ||");
-        System.out.println("=============================");
-        System.out.print("Choose an option: ");
-        
-        scanner.nextLine();
-        return;
-    }
-    
-    public static void loginSection(Scanner scanner) {	// Feito -- Lembrar de lógica de tentativas de login 
-        												// Lembrar de lógica de passar usuário por parâmetro para salvar a sessão
-    	AuthService authService = new AuthService();
-
-        try {
-        	
-            System.out.println("\n=== Login ===");
-            System.out.print("Enter your login (email): ");
-            String email = scanner.nextLine().trim();
-
-            System.out.print("Enter password: ");
-            String password = scanner.nextLine();
-
-            User loggedUser = authService.login(email, password);
-
-            if (loggedUser != null) {
-                
-            	System.out.println("Login successful! Welcome, " + loggedUser.getName());
-
-                if (loggedUser.getAccessLevel() == AccessLevel.MANAGER) 
-                    managementMenu(scanner);
-                 
-                else
-                    bankMenu(scanner);
-                
-            } 
-            
-            else
-                System.out.println("Login failed! Check email/password.");
-            
-        } catch (Exception e) {
-            System.out.println("An unexpected error occurred during login.");
-            e.printStackTrace();
         }
     }
     
@@ -328,6 +399,51 @@ public class App {
 
     }
     
+    public static void clientRefundRequestSection(Scanner scanner, Long clientId) {
+        RefundRequestService refundRequestService = new RefundRequestService();
+
+        System.out.println("\n=== Refund Request Menu ===");
+        System.out.println("1. Request a refund");
+        System.out.println("2. View your refund requests");
+        System.out.print("Choose an option: ");
+        int option = scanner.nextInt();
+        scanner.nextLine();
+
+        switch (option) {
+            case 1:
+                System.out.print("Enter the operation ID for the refund: ");
+                Long operationId = scanner.nextLong();
+                scanner.nextLine();
+
+                try {
+                    refundRequestService.requestRefund(operationId, clientId);
+                    System.out.println("Refund request submitted successfully.");
+                } catch (Exception e) {
+                    System.out.println("Failed to request refund: " + e.getMessage());
+                }
+                break;
+
+            case 2:
+                var requests = new RefundRequestRepository().findByClientId(clientId);
+
+                if (requests == null || requests.isEmpty()) {
+                    System.out.println("You have no refund requests.");
+                } else {
+                    System.out.println("\n=== Your Refund Requests ===");
+                    for (var req : requests) {
+                        System.out.printf("ID: %d | Operation ID: %d | Status: %s | Requested on: %s%n",
+                                req.getId(),
+                                req.getOperation().getId(),
+                                req.getStatus(),
+                                req.getRequestDate());
+                    }
+                }
+                break;
+
+            default:
+                System.out.println("Invalid option.");
+        }
+    }
     
 
     

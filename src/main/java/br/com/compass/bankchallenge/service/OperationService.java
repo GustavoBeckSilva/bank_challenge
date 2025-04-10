@@ -67,28 +67,24 @@ public class OperationService {
 	        
 	    	Account sourceAccount = accountRepository.findById(sourceAccountId);
 	        Account destinationAccount = accountRepository.findById(destinationAccountId);
-	        
+
 	        if (sourceAccount.getBalance() < amount)
 	            throw new IllegalArgumentException("Insufficient balance for transfer.");
-	        
+
 	        sourceAccount.setBalance(sourceAccount.getBalance() - amount);
 	        destinationAccount.setBalance(destinationAccount.getBalance() + amount);
+
 	        accountRepository.save(sourceAccount);
 	        accountRepository.save(destinationAccount);
-	        
-	        Operation opSource = new Operation();
-	        opSource.setAccount(sourceAccount);
-	        opSource.setAmount(amount);
-	        opSource.setOperationType(OperationType.TRANSFER);
-	        opSource.setOperationDate(LocalDateTime.now());
-	        operationRepository.save(opSource);
-	        
-	        Operation opDestination = new Operation();
-	        opDestination.setAccount(destinationAccount);
-	        opDestination.setAmount(amount);
-	        opDestination.setOperationType(OperationType.TRANSFER_RECEIVED);
-	        opDestination.setOperationDate(LocalDateTime.now());
-	        operationRepository.save(opDestination);
+
+	        Operation opTransfer = new Operation();
+	        opTransfer.setAccount(sourceAccount);
+	        opTransfer.setTargetAccount(destinationAccount);
+	        opTransfer.setAmount(amount);
+	        opTransfer.setOperationType(OperationType.TRANSFER);
+	        opTransfer.setOperationDate(LocalDateTime.now());
+
+	        operationRepository.save(opTransfer);
 	        
 
 	    }

@@ -35,14 +35,85 @@ public class RefundRequest {
     private Operation operation;
 
     @Enumerated(EnumType.STRING)
-    private RefundStatus status;
+    private RefundStatus status = RefundStatus.PENDING;;
 
-    private LocalDateTime requestDate;
+    private LocalDateTime requestDate = LocalDateTime.now();;
 
     private LocalDateTime responseDate;
-	
+    
+    private String justification;
+    
     public RefundRequest() {}
     
-    
-	
+    public RefundRequest(Client client, Operation operation) {
+        this.client = client;
+        this.operation = operation;
+        this.status = RefundStatus.PENDING;
+        this.requestDate = LocalDateTime.now();
+    }
+
+	public Long getId() {
+		return id;
+	}
+
+	public void setId(Long id) {
+		this.id = id;
+	}
+
+	public Client getClient() {
+		return client;
+	}
+
+	public void setClient(Client client) {
+		this.client = client;
+	}
+
+	public Manager getManager() {
+		return manager;
+	}
+
+	public void setManager(Manager manager) {
+		this.manager = manager;
+	}
+
+	public Operation getOperation() {
+		return operation;
+	}
+
+	public void setOperation(Operation operation) {
+		this.operation = operation;
+	}
+
+	public RefundStatus getStatus() {
+		return status;
+	}
+
+	public void setStatus(RefundStatus status) {
+		this.status = status;
+	}
+
+	public LocalDateTime getRequestDate() {
+		return requestDate;
+	}
+
+	public void setRequestDate(LocalDateTime requestDate) {
+		this.requestDate = requestDate;
+	}
+
+	public LocalDateTime getResponseDate() {
+		return responseDate;
+	}
+
+	public void setResponseDate(LocalDateTime responseDate) {
+		this.responseDate = responseDate;
+	}
+
+	public String getJustification() {
+		return justification;
+	}
+
+	public void setJustification(String justification) {
+		this.justification = justification;
+	}
+     
 }
