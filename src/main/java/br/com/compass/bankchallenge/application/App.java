@@ -302,7 +302,7 @@ public class App {
         }
     }
 
-    public static void transferSection(Scanner scanner) { // Feito
+    public static void transferSection(Scanner scanner) { // Feito -- Lembrar de lógica de salvar como depósito na conta source.
     	
     	System.out.println("\n=== Transfer ===");
         try {
@@ -327,6 +327,8 @@ public class App {
         }
 
     }
+    
+    
 
     
 }

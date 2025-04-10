@@ -32,8 +32,6 @@ public class OperationService {
 	        return operations;
 	    }
 	    
-  //// ////  //// //// //// //// //// //// //// //// //// //// //// //// //// //// //// //// //// //// //// //// //// //// //// //// //// //// //// //// //// ////
-
 	    public void withdrawal(Long accountId, Double amount) {
 	        Account account = accountRepository.findById(accountId);
 	        
@@ -78,16 +76,21 @@ public class OperationService {
 	        accountRepository.save(sourceAccount);
 	        accountRepository.save(destinationAccount);
 	        
-	        Operation op = new Operation();
-	        op.setAccount(sourceAccount);
-	        op.setAmount(amount);
-	        op.setOperationType(OperationType.TRANSFER);
-	        op.setOperationDate(LocalDateTime.now());
-	        operationRepository.save(op);
+	        Operation opSource = new Operation();
+	        opSource.setAccount(sourceAccount);
+	        opSource.setAmount(amount);
+	        opSource.setOperationType(OperationType.TRANSFER);
+	        opSource.setOperationDate(LocalDateTime.now());
+	        operationRepository.save(opSource);
+	        
+	        Operation opDestination = new Operation();
+	        opDestination.setAccount(destinationAccount);
+	        opDestination.setAmount(amount);
+	        opDestination.setOperationType(OperationType.TRANSFER_RECEIVED);
+	        opDestination.setOperationDate(LocalDateTime.now());
+	        operationRepository.save(opDestination);
 	        
 
 	    }
 	    
-//// ////  //// //// //// //// //// //// //// //// //// //// //// //// //// //// //// //// //// //// //// //// //// //// //// //// //// //// //// //// //// ////
-
 }

@@ -1,9 +1,9 @@
 package br.com.compass.bankchallenge.domain;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 import br.com.compass.bankchallenge.domain.enums.OperationType;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -27,6 +27,7 @@ public class Operation {
     private Account account;
 	
 	@Enumerated(EnumType.STRING)
+	@Column(length = 50)
     private OperationType operationType;
 
     private Double amount;
