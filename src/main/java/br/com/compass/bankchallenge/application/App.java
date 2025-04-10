@@ -136,7 +136,7 @@ public class App {
         }
     }
     
-    public static void managerRefundRequestSection(Scanner scanner, Manager manager) {
+    public static void managerRefundRequestSection(Scanner scanner, Manager manager) { // Feito
         RefundRequestService refundRequestService = new RefundRequestService();
         RefundRequestRepository refundRequestRepository = new RefundRequestRepository();
 
@@ -399,7 +399,7 @@ public class App {
 
     }
     
-    public static void clientRefundRequestSection(Scanner scanner, Long clientId) {
+    public static void clientRefundRequestSection(Scanner scanner, Long clientId) { // Feito
         RefundRequestService refundRequestService = new RefundRequestService();
 
         System.out.println("\n=== Refund Request Menu ===");

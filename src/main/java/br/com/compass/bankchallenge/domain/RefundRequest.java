@@ -15,7 +15,7 @@ import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 
 @Entity
-@Table(name = "tb_refund_request")
+@Table(name = "tb_refund_requests")
 public class RefundRequest {
 
 	@Id
