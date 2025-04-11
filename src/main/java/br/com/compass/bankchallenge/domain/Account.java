@@ -40,8 +40,8 @@ public class Account {
     @Column(name = "account_type", nullable = false)
 	private AccountType accountType;
 	
-	// private List<Statement> statments;
-	// private List<RefundRequest> refundRequests;
+    @OneToMany(mappedBy = "account", cascade = CascadeType.ALL, orphanRemoval = true)
+	private List<Statement> statements;
     
     @OneToMany(mappedBy = "account", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Operation> operations = new ArrayList<>();
@@ -106,6 +106,10 @@ public class Account {
         return operations;
     }
 	
+	public List<Statement> getStatments() {
+		return statements;
+	}
+	
 	// Specific methods
 	
 	private String generateAccountNumber() {
@@ -120,6 +124,11 @@ public class Account {
     public void removeOperation(Operation operation) {
         operations.remove(operation);
         operation.setAccount(null);
+    }
+    
+    public void addStatement(Statement statement) {
+        statements.add(statement);
+        statement.setAccount(this);
     }
 	
 }

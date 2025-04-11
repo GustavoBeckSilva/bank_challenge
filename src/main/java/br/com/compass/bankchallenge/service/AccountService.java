@@ -2,6 +2,7 @@ package br.com.compass.bankchallenge.service;
 
 import br.com.compass.bankchallenge.domain.Account;
 import br.com.compass.bankchallenge.domain.Client;
+import br.com.compass.bankchallenge.domain.Statement;
 import br.com.compass.bankchallenge.domain.enums.AccountType;
 import br.com.compass.bankchallenge.repository.AccountRepository;
 
@@ -19,4 +20,8 @@ public class AccountService {
         accountRepository.save(account);
     }
     
+    public void addStatementToAccount(Account account, Statement statement) {
+        account.addStatement(statement); 
+        accountRepository.save(account);     
+    }
 }

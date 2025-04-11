@@ -1,14 +1,18 @@
 package br.com.compass.bankchallenge.application;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
 
 import br.com.compass.bankchallenge.config.DatabaseInitializer;
 import br.com.compass.bankchallenge.domain.Account;
 import br.com.compass.bankchallenge.domain.Client;
 import br.com.compass.bankchallenge.domain.Manager;
+import br.com.compass.bankchallenge.domain.Operation;
 import br.com.compass.bankchallenge.domain.User;
 import br.com.compass.bankchallenge.domain.enums.AccessLevel;
 import br.com.compass.bankchallenge.domain.enums.AccountType;
@@ -19,6 +23,7 @@ import br.com.compass.bankchallenge.service.AuthService;
 import br.com.compass.bankchallenge.service.ClientService;
 import br.com.compass.bankchallenge.service.OperationService;
 import br.com.compass.bankchallenge.service.RefundRequestService;
+import br.com.compass.bankchallenge.service.StatementService;
 import br.com.compass.bankchallenge.service.UserService;
 import br.com.compass.bankchallenge.util.JPAUtil;
 
@@ -40,7 +45,7 @@ public class App {
     }
     
     
-// Public
+// Public ##########################################################################################
     
     public static void mainMenu(Scanner scanner) {	// Feito
         
@@ -106,16 +111,26 @@ public class App {
             return null;
         }
     }
+    
+    public static Boolean exitSection(Scanner scanner) {
+    	
+        System.out.println("Exiting...");
+        return false;
+    	
+    }
 
-// Management
+// Management ##########################################################################################
     
     public static void managementMenu(Scanner scanner, Manager manager) { // Falta -- Lembrar de gerente master
-    	
+    																	  // Falta -- Lembrar da lógica de bloquear e desbloquear conta
     	boolean running = true;
 
         while (running) {
             System.out.println("========= Management Menu =========");
 	        System.out.println("|| 1. Pending refund requests    ||");
+	        System.out.println("|| 2. Unlock accounts            ||");
+	        System.out.println("|| 3. Unlock accounts            ||");
+	        System.out.println("|| 4. Create manager             ||");
             System.out.println("|| 0. Exit                       ||");
             System.out.println("===================================");
             System.out.print("Choose an option: ");
@@ -127,8 +142,7 @@ public class App {
                 	managerRefundRequestSection(scanner, manager);
                     break;
                 case 0:
-                    System.out.println("Exiting...");
-                    running = false;
+                	running = exitSection(scanner);
                     return;
                 default:
                     System.out.println("Invalid option! Please try again.");
@@ -180,9 +194,9 @@ public class App {
         }
     }
     
-// Client
+// Client ##########################################################################################
     
-    public static void bankMenu(Scanner scanner, Client client) {	// Falta
+    public static void bankMenu(Scanner scanner, Client client) {	// Feito
         
     	boolean running = true;
 
@@ -208,23 +222,19 @@ public class App {
                 	withdrawSection(scanner);
                     break;
                 case 3:
-                    // ToDo...
-                    System.out.println("Check Balance.");
+                	checkBalanceSection(scanner);
                     break;
                 case 4:
                 	transferSection(scanner);
                     break;
                 case 5:
-                    // ToDo...
-                    System.out.println("Bank Statement.");
+                	bankStatementSection(scanner, client);
                     break;
                 case 6:
                 	clientRefundRequestSection(scanner, client.getId());
                     break;
                 case 0:
-                    // ToDo...
-                    System.out.println("Exiting...");
-                    running = false;
+                	running = exitSection(scanner);
                     return;
                 default:
                     System.out.println("Invalid option! Please try again.");
@@ -445,6 +455,92 @@ public class App {
         }
     }
     
+    public static void bankStatementSection(Scanner scanner, Client client) { // Feito
+        System.out.println("\n=== Bank Statement Menu ===");
+        System.out.println("0. Exit");
+        System.out.println("1. View general statement");
+        System.out.println("2. View deposit statement");
+        System.out.println("3. View withdraw statement");
+        System.out.println("4. View transfer statement");
+        System.out.print("Choose an option: ");
+        int option = scanner.nextInt();
+        scanner.nextLine(); 
 
+        System.out.print("Enter period start (e.g., 01/04/2025 00:00): ");
+        LocalDateTime start;
+        try {
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+            start = LocalDateTime.parse(scanner.nextLine().trim(), formatter);
+        } catch (Exception e) {
+            System.out.println("Invalid date format. Use dd/MM/yyyy HH:mm");
+            return;
+        }
+
+        System.out.print("Enter period end (e.g., 30/04/2025 23:59): ");
+        LocalDateTime end;
+        try {
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+            end = LocalDateTime.parse(scanner.nextLine().trim(), formatter);
+        } catch (Exception e) {
+            System.out.println("Invalid date format. Use dd/MM/yyyy HH:mm");
+            return;
+        }
+
+        StatementService service = new StatementService();
+        List<Operation> operations = new ArrayList<>();
+
+        switch (option) {
+        	case 0:
+        		exitSection(scanner);
+        		return;
+            case 1:
+                operations = service.viewStatement(client.getAccounts().get(0).getId(), start, end);
+                break;
+            case 2:
+                operations = service.viewDepositStatement(client.getAccounts().get(0).getId(), start, end);
+                break;
+            case 3:
+                operations = service.viewWithdrawalStatement(client.getAccounts().get(0).getId(), start, end);
+                break;
+            case 4:
+                operations = service.viewTransferStatement(client.getAccounts().get(0).getId(), start, end);
+                break;
+            default:
+                System.out.println("Invalid option.");
+                return;
+        }
+
+        if (operations.isEmpty()) {
+            System.out.println("No operations found for your account in the given period.");
+            return;
+        }
+
+        System.out.println("\n=== Statement Result ===");
+        for (Operation op : operations) {
+            System.out.printf("ID: %d | Type: %s | Amount: %.2f | Date: %s%n",
+                op.getId(), op.getOperationType(), op.getAmount(), op.getOperationDate());
+        }
+
+        System.out.print("\nDo you want to export this statement to CSV? (yes/no): ");
+        String exportAnswer = scanner.nextLine().trim().toLowerCase();
+
+        if (exportAnswer.equals("yes") || exportAnswer.equals("y")) {
+            System.out.print("Enter file path for CSV export (e.g., /path/to/extract.csv): ");
+            String filePath = scanner.nextLine().trim();
+
+            boolean success = service.exportStatementToCSV(operations, filePath);
+            
+            if (success) {
+                System.out.println("CSV exported successfully to: " + filePath);
+            } else {
+                System.out.println("Failed to export CSV.");
+            }
+        }
+    }
+    
+    public static void checkBalanceSection(Scanner scanner) { // Falta
+        System.out.println("Check Balance.");
+    	
+    }
     
 }
