@@ -58,13 +58,13 @@ public class StatementService {
         return depositOps;
     }
 
-    public List<Operation> viewTransferStatement(Long accountId, LocalDateTime periodStart, LocalDateTime periodEnd) {
+    public List<Operation> viewTransferStatement(Account account, LocalDateTime periodStart, LocalDateTime periodEnd) {
 
-        List<Operation> transferSourceOps = viewStatement(accountId, periodStart, periodEnd).stream()
+        List<Operation> transferSourceOps = viewStatement(account.getId(), periodStart, periodEnd).stream()
                 .filter(op -> op.getOperationType() == OperationType.TRANSFER)
                 .collect(Collectors.toList());
 
-        List<Operation> transferReceivedOps = operationRepository.findByTargetAccountId(accountId).stream()
+        List<Operation> transferReceivedOps = operationRepository.findByTargetAccountId(account.getId()).stream()
                 .filter(op -> op.getOperationType() == OperationType.TRANSFER &&
                               !op.getOperationDate().isBefore(periodStart) &&
                               !op.getOperationDate().isAfter(periodEnd))
@@ -73,7 +73,7 @@ public class StatementService {
         transferSourceOps.addAll(transferReceivedOps);
 
         if (transferSourceOps.isEmpty()) {
-            System.out.println("No transfer operations found for account " + accountId + " in the given period.");
+            System.out.println("No transfer operations found for account " + account.getAccountNumber() + " in the given period.");
         }
         return transferSourceOps;
     }

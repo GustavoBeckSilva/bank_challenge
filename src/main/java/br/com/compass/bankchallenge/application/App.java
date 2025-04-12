@@ -1,11 +1,13 @@
 package br.com.compass.bankchallenge.application;
 
+import java.io.File;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Scanner;
 
 import br.com.compass.bankchallenge.config.DatabaseInitializer;
@@ -31,6 +33,8 @@ import br.com.compass.bankchallenge.util.JPAUtil;
 public class App {
     	
     public static void main(String[] args) {	
+    	
+    	Locale.setDefault(Locale.US);
     	
         DatabaseInitializer.loadInitialManager();
     	
@@ -73,7 +77,7 @@ public class App {
                     accountOpeningSection(scanner);
                     break;
                 case 0:
-                    running = false;
+                	running = exitSection(scanner);
                     break;
                 default:
                     System.out.println("Invalid option! Please try again.");
@@ -435,19 +439,19 @@ public class App {
                 	withdrawSection(scanner, account);
                     break;
                 case 3:
-                	checkBalanceSection(scanner);
+                	checkBalanceSection(scanner, account);
                     break;
                 case 4:
                 	transferSection(scanner, account);
                     break;
                 case 5:
-                	bankStatementSection(scanner, client);
+                	bankStatementSection(scanner, client, account);
                     break;
                 case 6:
-                	clientRefundRequestSection(scanner, client.getId());
+                	clientRefundRequestSection(scanner, account, client);
                     break;
                 case 7:
-                	createNewAccount(scanner);
+                	createNewAccount(scanner, client);
                     break;
                 case 0:
                 	running = exitSection(scanner);
@@ -575,7 +579,7 @@ public class App {
         }
     }
     
-    public static void clientRefundRequestSection(Scanner scanner, Long clientId) { //
+    public static void clientRefundRequestSection(Scanner scanner, Account account, Client client) { // Done
         
     	RefundRequestService refundRequestService = new RefundRequestService();
 
@@ -588,12 +592,25 @@ public class App {
 
         switch (option) {
             case 1:
-                System.out.print("Enter the operation ID for the refund: ");
+            	StatementService statementService = new StatementService();
+            	List<Operation> transfers = statementService.viewTransferStatement(account, LocalDateTime.MIN, LocalDateTime.now());
+                
+            	if (transfers.isEmpty()) {
+                    System.out.println("\n\nNo transfers found for your account.");
+                    return;
+                }
+            	
+                for (Operation op : transfers) {
+                    System.out.printf("ID: %d | Type: %s | Amount: %.2f | Date: %s%n",
+                        op.getId(), op.getOperationType(), op.getAmount(), op.getOperationDate());
+                }
+            	
+            	System.out.print("\n\nEnter the transaction ID for the refund: ");
                 Long operationId = scanner.nextLong();
                 scanner.nextLine();
 
                 try {
-                    refundRequestService.requestRefund(operationId, clientId);
+                    refundRequestService.requestRefund(operationId, client.getId());
                     System.out.println("Refund request submitted successfully.");
                 } catch (Exception e) {
                     System.out.println("Failed to request refund: " + e.getMessage());
@@ -601,12 +618,14 @@ public class App {
                 break;
 
             case 2:
-                var requests = new RefundRequestRepository().findByClientId(clientId);
+                var requests = new RefundRequestRepository().findByClientId(client.getId());
 
                 if (requests == null || requests.isEmpty()) {
-                    System.out.println("You have no refund requests.");
+                    System.out.println("\n\nYou have no refund requests.");
+                    System.out.print("\n\nPress Enter to continue: ");
+                    scanner.nextLine();
                 } else {
-                    System.out.println("\n=== Your Refund Requests ===");
+                    System.out.println("\n\n=== Your Refund Requests ===");
                     for (var req : requests) {
                         System.out.printf("ID: %d | Operation ID: %d | Status: %s | Requested on: %s%n",
                                 req.getId(),
@@ -614,6 +633,8 @@ public class App {
                                 req.getStatus(),
                                 req.getRequestDate());
                     }
+                    System.out.print("\n\nPress Enter to continue: ");
+                    scanner.nextLine();
                 }
                 break;
 
@@ -622,8 +643,9 @@ public class App {
         }
     }
     
-    public static void bankStatementSection(Scanner scanner, Client client) { //
-        System.out.println("\n=== Bank Statement Menu ===");
+    public static void bankStatementSection(Scanner scanner, Client client, Account account) { // Done
+        
+    	System.out.println("\n\n=== Bank Statement Menu ===");
         System.out.println("0. Exit");
         System.out.println("1. View general statement");
         System.out.println("2. View deposit statement");
@@ -633,8 +655,13 @@ public class App {
         
         int option = scanner.nextInt();
         scanner.nextLine(); 
-
-        System.out.print("Enter period start (e.g., 01/04/2025 00:00): ");
+        
+        if(option == 0) {
+        	exitSection(scanner);
+        	return;
+        }
+                
+        System.out.print("\n\nEnter period start (e.g., 01/04/2025 00:00): ");
         LocalDateTime start;
         try {
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
@@ -643,14 +670,25 @@ public class App {
             System.out.println("Invalid date format. Use dd/MM/yyyy HH:mm");
             return;
         }
-
-        System.out.print("Enter period end (e.g., 30/04/2025 23:59): ");
+        
+        System.out.print("Enter period end (e.g., 10/04/2025 23:59): ");
         LocalDateTime end;
         try {
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
             end = LocalDateTime.parse(scanner.nextLine().trim(), formatter);
         } catch (Exception e) {
             System.out.println("Invalid date format. Use dd/MM/yyyy HH:mm");
+            return;
+        }
+        
+        if (!start.isBefore(end)) {
+            System.out.println("Start date must be before end date.");
+            return;
+        }
+        
+        LocalDateTime now = LocalDateTime.now();
+        if (start.isAfter(now) || end.isAfter(now)) {
+            System.out.println("\n\nDates cannot be in the future.");
             return;
         }
 
@@ -662,16 +700,16 @@ public class App {
         		exitSection(scanner);
         		return;
             case 1:
-                operations = service.viewStatement(client.getAccounts().get(0).getId(), start, end);
+                operations = service.viewStatement(account.getId(), start, end);
                 break;
             case 2:
-                operations = service.viewDepositStatement(client.getAccounts().get(0).getId(), start, end);
+                operations = service.viewDepositStatement(account.getId(), start, end);
                 break;
             case 3:
-                operations = service.viewWithdrawalStatement(client.getAccounts().get(0).getId(), start, end);
+                operations = service.viewWithdrawalStatement(account.getId(), start, end);
                 break;
             case 4:
-                operations = service.viewTransferStatement(client.getAccounts().get(0).getId(), start, end);
+                operations = service.viewTransferStatement(account, start, end);
                 break;
             default:
                 System.out.println("Invalid option.");
@@ -679,11 +717,11 @@ public class App {
         }
 
         if (operations.isEmpty()) {
-            System.out.println("No operations found for your account in the given period.");
+            System.out.println("\n\nNo operations found for your account in the given period.");
             return;
         }
 
-        System.out.println("\n=== Statement Result ===");
+        System.out.println("\n\n=== Statement Result ===");
         for (Operation op : operations) {
             System.out.printf("ID: %d | Type: %s | Amount: %.2f | Date: %s%n",
                 op.getId(), op.getOperationType(), op.getAmount(), op.getOperationDate());
@@ -693,25 +731,85 @@ public class App {
         String exportAnswer = scanner.nextLine().trim().toLowerCase();
 
         if (exportAnswer.equals("yes") || exportAnswer.equals("y")) {
-            System.out.print("Enter file path for CSV export (e.g., /path/to/extract.csv): ");
-            String filePath = scanner.nextLine().trim();
 
+        	String folderPath = "statements";
+            File folder = new File(folderPath);
+            
+            if (!folder.exists())
+                folder.mkdirs();           
+            
+            String uniqueId = String.valueOf(System.currentTimeMillis());
+
+            String fileName = client.getId() + "_" + uniqueId + "_statement.csv";
+
+            String filePath = folderPath + File.separator + fileName;
+        	        	
             boolean success = service.exportStatementToCSV(operations, filePath);
             
             if (success) {
-                System.out.println("CSV exported successfully to: " + filePath);
+                System.out.println("\n\nCSV exported successfully to: " + filePath);
             } else {
-                System.out.println("Failed to export CSV.");
+                System.out.println("\n\nFailed to export CSV.");
             }
         }
     }
     
-    public static void createNewAccount(Scanner scanner) { //
+    public static void createNewAccount(Scanner scanner, Client client) { // Done
     	
-    }
-    
-    public static void checkBalanceSection(Scanner scanner) { //
+    	System.out.println("\n=== New Account ===");
+                    
+        System.out.println("Select account type:");
+        System.out.println("1. Checking");
+        System.out.println("2. Savings");
+        System.out.println("3. Payroll");
+        
+        int accountTypeChoice = scanner.nextInt();
+        scanner.nextLine(); 
+        
+        AccountType accountType;
+        
+        if (accountTypeChoice == 1) 
+            accountType = AccountType.CHECKING;
+        
+        else if (accountTypeChoice == 2)
+            accountType = AccountType.SAVINGS;
+        
+        else if (accountTypeChoice == 3)
+            accountType = AccountType.PAYROLL;
+        
+        else {
+            System.out.println("Invalid account type selected. Defaulting to checking.");
+            accountType = AccountType.CHECKING;
+        }
+                    
+        try {
+                            
+            Account newAccount = new Account(client, accountType);
+            client.addAccount(newAccount);
+
+            AccountService accountService = new AccountService();
+            accountService.registerAccount(client, accountType);
+
+            System.out.println("\n\n\n\nNew account creation successful!");
+            
+        } catch (IllegalArgumentException e) {
+            System.out.println("\n\n\n\nError creating account: " + e.getMessage());
+        }
+            
+    } 
+        
+    public static void checkBalanceSection(Scanner scanner, Account account) { // Done
     	
+        scanner.nextLine(); 
+    	
+        System.out.println("\n\n=== Check Balance ===");
+        System.out.println("\nAccount Details:");
+        System.out.printf("Account Number: %s%n", account.getAccountNumber());
+        System.out.printf("Account Owner: %s%n", account.getClient().getName());
+        System.out.printf("Current Balance: $ %.2f%n", account.getBalance());
+        
+        System.out.print("\n\nPress Enter to continue: ");
+        scanner.nextLine();
     }
     
 }
