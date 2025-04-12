@@ -19,13 +19,13 @@ public class DatabaseInitializer {
 
 	            if (count == 0) {
 	                Manager manager = new Manager();
-	                manager.setName("Root Manager");
-	                manager.setEmail("rootmanager@bankemail.com");
+	                manager.setName("Root");
+	                manager.setEmail("root@email.com");
 	                manager.setPassword(SecurityUtil.hashPassword("123456"));
 	                manager.setAccessLevel(AccessLevel.MANAGER);
 	                em.persist(manager);
 
-	                System.out.println("Root Manager account created: rootmanager@bankemail.com / 123456");
+	                System.out.println("Root Manager account created: root@email.com | 123456");
 	            }
 
 	            em.getTransaction().commit();

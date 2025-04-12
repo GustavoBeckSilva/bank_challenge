@@ -96,11 +96,9 @@ public class StatementService {
                 );
             }
 
-            // Persistindo o Statement após exportar com sucesso
             Statement statement = new Statement();
             statement.setAccount(operations.get(0).getAccount());
 
-            // Calcula o início e o fim do período com base nas operações
             LocalDateTime periodStart = operations.stream()
                     .map(Operation::getOperationDate)
                     .min(LocalDateTime::compareTo)
@@ -124,27 +122,7 @@ public class StatementService {
             return false;
         }
     }
-    
-    private boolean exportOperationsToCSV(List<Operation> operations, String filePath) {
-        try (FileWriter writer = new FileWriter(filePath)) {
-            writer.write("OperationID,Type,Amount,Date\n");
-            for (Operation op : operations) {
-            	DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
-
-            	writer.write(String.format("%d,%s,%.2f,%s\n",
-            	    op.getId(),
-            	    op.getOperationType().name(),
-            	    op.getAmount(),
-            	    op.getOperationDate().format(formatter)));
-            }
-            writer.flush();
-            return true;
-        } catch (IOException e) {
-            e.printStackTrace();
-            return false;
-        }
-    }
-    
+        
     public Statement createStatementRecord(Long accountId, LocalDateTime periodStart, LocalDateTime periodEnd, String filePath, List<Operation> operations) {
         
     	if (operations == null || operations.isEmpty()) {

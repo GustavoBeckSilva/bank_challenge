@@ -1,6 +1,8 @@
 package br.com.compass.bankchallenge.service;
 
+import br.com.compass.bankchallenge.domain.Manager;
 import br.com.compass.bankchallenge.domain.User;
+import br.com.compass.bankchallenge.domain.enums.AccessLevel;
 import br.com.compass.bankchallenge.util.JPAUtil;
 import br.com.compass.bankchallenge.util.SecurityUtil;
 import jakarta.persistence.EntityManager;
@@ -19,7 +21,7 @@ public class AuthService {
 	                      .getSingleResult();
 
 	        if (user.isBlocked()) {
-	            System.out.println("Account is locked. Please contact a manager.");
+	            System.out.println("\n\nThis account is locked. Please contact a manager.");
 	            return null;
 	        }
 
@@ -81,5 +83,20 @@ public class AuthService {
 	        em.close();
 	    }
 	}
+	
+	public void registerManager(String name, String email, String password) {
+        if (name == null || name.isBlank() || email == null || email.isBlank() || password == null || password.isBlank()) {
+            System.out.println("Name, email, and password are required.");
+            return;
+        }
+
+        Manager manager = new Manager();
+        manager.setName(name);
+        manager.setEmail(email);
+        manager.setPassword(password);
+        manager.setAccessLevel(AccessLevel.MANAGER);
+
+        register(manager);
+    }
     
 }

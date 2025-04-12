@@ -17,6 +17,7 @@ import br.com.compass.bankchallenge.domain.User;
 import br.com.compass.bankchallenge.domain.enums.AccessLevel;
 import br.com.compass.bankchallenge.domain.enums.AccountType;
 import br.com.compass.bankchallenge.domain.enums.RefundStatus;
+import br.com.compass.bankchallenge.repository.AccountRepository;
 import br.com.compass.bankchallenge.repository.RefundRequestRepository;
 import br.com.compass.bankchallenge.service.AccountService;
 import br.com.compass.bankchallenge.service.AuthService;
@@ -28,7 +29,7 @@ import br.com.compass.bankchallenge.service.UserService;
 import br.com.compass.bankchallenge.util.JPAUtil;
 
 public class App {
-    
+    	
     public static void main(String[] args) {	
     	
         DatabaseInitializer.loadInitialManager();
@@ -39,20 +40,20 @@ public class App {
         
         scanner.close();
         
-        System.out.println("Application closed");
         JPAUtil.shutdown();
 
     }
     
     
-// Public ##########################################################################################
+// Public ##########################################################################################   
     
-    public static void mainMenu(Scanner scanner) {	// Feito
+    public static void mainMenu(Scanner scanner) {	
         
     	boolean running = true;
 
         while (running) {
-            System.out.println("========= Main Menu =========");
+
+            System.out.println("\n\n\n\n========= Main Menu =========");
             System.out.println("|| 1. Login                ||");
             System.out.println("|| 2. Account Opening      ||");
             System.out.println("|| 0. Exit                 ||");
@@ -64,13 +65,9 @@ public class App {
 
             switch (option) {
             	case 1:
-	                User user = loginSection(scanner);
-	                if (user != null) {
-	                    if (user.getAccessLevel() == AccessLevel.MANAGER)
-	                        managementMenu(scanner, (Manager) user);
-	                    else
-	                        bankMenu(scanner, (Client) user);
-	                }
+            		User user = loginSection(scanner);
+            	    if (user != null) 
+            	    	handleLogin(user, scanner);
                 	break;
                 case 2:
                     accountOpeningSection(scanner);
@@ -84,165 +81,37 @@ public class App {
         }
     }
     
-    public static User loginSection(Scanner scanner) {
+    public static User loginSection(Scanner scanner) { // Done
+    	
         AuthService authService = new AuthService();
 
         try {
-            System.out.println("\n=== Login ===");
-            System.out.print("Enter your login (email): ");
+            System.out.println("\n\n\n\n========= Login =========");
+            System.out.print("Enter your email: ");
             String email = scanner.nextLine().trim();
 
             System.out.print("Enter password: ");
             String password = scanner.nextLine();
 
             User loggedUser = authService.login(email, password);
-
+            
             if (loggedUser != null) {
-                System.out.println("Login successful! Welcome, " + loggedUser.getName());
+                System.out.println("\n\n\n\nLogin successful! Welcome, " + loggedUser.getName());
                 return loggedUser;
-            } else {
-                System.out.println("Login failed! Check email/password.");
+            }             	
+            else {
+                System.out.println("\n\n\n\nLogin failed!");
                 return null;
             }
 
         } catch (Exception e) {
-            System.out.println("An unexpected error occurred during login.");
+            System.out.println("\n\n\n\nAn unexpected error occurred during login.");
             e.printStackTrace();
             return null;
         }
     }
     
-    public static Boolean exitSection(Scanner scanner) {
-    	
-        System.out.println("Exiting...");
-        return false;
-    	
-    }
-
-// Management ##########################################################################################
-    
-    public static void managementMenu(Scanner scanner, Manager manager) { // Falta -- Lembrar de gerente master
-    																	  // Falta -- Lembrar da lógica de bloquear e desbloquear conta
-    	boolean running = true;
-
-        while (running) {
-            System.out.println("========= Management Menu =========");
-	        System.out.println("|| 1. Pending refund requests    ||");
-	        System.out.println("|| 2. Unlock accounts            ||");
-	        System.out.println("|| 3. Unlock accounts            ||");
-	        System.out.println("|| 4. Create manager             ||");
-            System.out.println("|| 0. Exit                       ||");
-            System.out.println("===================================");
-            System.out.print("Choose an option: ");
-
-            int option = scanner.nextInt();
-
-            switch (option) {
-                case 1:
-                	managerRefundRequestSection(scanner, manager);
-                    break;
-                case 0:
-                	running = exitSection(scanner);
-                    return;
-                default:
-                    System.out.println("Invalid option! Please try again.");
-            }
-        }
-    }
-    
-    public static void managerRefundRequestSection(Scanner scanner, Manager manager) { // Feito
-        RefundRequestService refundRequestService = new RefundRequestService();
-        RefundRequestRepository refundRequestRepository = new RefundRequestRepository();
-
-        var pendingRequests = refundRequestRepository.findByStatus(RefundStatus.PENDING);
-
-        if (pendingRequests == null || pendingRequests.isEmpty()) {
-            System.out.println("There are no pending refund requests.");
-            return;
-        }
-
-        System.out.println("\n=== Pending Refund Requests ===");
-        for (var request : pendingRequests) {
-            System.out.printf("ID: %d | Operation ID: %d | Client ID: %d | Requested on: %s%n",
-                    request.getId(),
-                    request.getOperation().getId(),
-                    request.getClient().getId(),
-                    request.getRequestDate());
-        }
-
-        System.out.print("Enter the ID of the refund request to process (or 0 to cancel): ");
-        Long requestId = scanner.nextLong();
-        scanner.nextLine();
-
-        if (requestId == 0) return;
-
-        System.out.print("Approve this refund? (y/n): ");
-        String input = scanner.nextLine().trim().toLowerCase();
-
-        try {
-            if (input.equals("y") || input.equals("yes")) {
-                refundRequestService.approveRefund(manager, requestId);
-                System.out.println("Refund approved successfully.");
-            } else if (input.equals("n") || input.equals("no")) {
-                refundRequestService.rejectRefund(manager, requestId);
-                System.out.println("Refund rejected successfully.");
-            } else {
-                System.out.println("Invalid choice.");
-            }
-        } catch (Exception e) {
-            System.out.println("Error processing refund: " + e.getMessage());
-        }
-    }
-    
-// Client ##########################################################################################
-    
-    public static void bankMenu(Scanner scanner, Client client) {	// Feito
-        
-    	boolean running = true;
-
-        while (running) {
-            System.out.println("========= Bank Menu =========");
-            System.out.println("|| 1. Deposit              ||");
-            System.out.println("|| 2. Withdraw             ||");
-            System.out.println("|| 3. Check Balance        ||");
-            System.out.println("|| 4. Transfer             ||");
-            System.out.println("|| 5. Bank Statement       ||");
-            System.out.println("|| 6. Refund request list  ||");
-            System.out.println("|| 0. Exit                 ||");
-            System.out.println("=============================");
-            System.out.print("Choose an option: ");
-
-            int option = scanner.nextInt();
-
-            switch (option) {
-                case 1:
-                	depositSection(scanner);
-                    break;
-                case 2:
-                	withdrawSection(scanner);
-                    break;
-                case 3:
-                	checkBalanceSection(scanner);
-                    break;
-                case 4:
-                	transferSection(scanner);
-                    break;
-                case 5:
-                	bankStatementSection(scanner, client);
-                    break;
-                case 6:
-                	clientRefundRequestSection(scanner, client.getId());
-                    break;
-                case 0:
-                	running = exitSection(scanner);
-                    return;
-                default:
-                    System.out.println("Invalid option! Please try again.");
-            }
-        }
-    }
-    
-    public static void accountOpeningSection(Scanner scanner) { // Feito
+    public static void accountOpeningSection(Scanner scanner) { // Done
     	
         System.out.println("\n=== Account Opening ===");
         System.out.print("Enter your email: ");
@@ -314,103 +183,401 @@ public class App {
                 AccountService accountService = new AccountService();
                 accountService.registerAccount(client, accountType);
 
-                System.out.println("Account creation successful! Your client registration is complete.");
+                System.out.println("\n\n\n\nAccount creation successful! Your client registration is complete.");
                 
             } catch (IllegalArgumentException e) {
-                System.out.println("Error creating account: " + e.getMessage());
+                System.out.println("\n\n\n\nError creating account: " + e.getMessage());
             }
             
         } 
         
         else {
 
-            System.out.println("There is already a user with that email.");
-            System.out.print("Do you want to log in now to open a new linked account? (y/n): ");
+            System.out.println("\n\n\n\nThere is already a user with that email.");
+            System.out.print("\n\nDo you want to log in now to open a new linked account? (y/n): ");
             String answer = scanner.nextLine().trim().toLowerCase();
             
             if (answer.equals("y") || answer.equals("yes"))
             	loginSection(scanner);
             
             else
-                System.out.println("Returning to the main menu...");
+                System.out.println("\n\n\n\nReturning to the main menu...");
             
         }
     }
     
-    public static void depositSection(Scanner scanner) { // Feito
-    	
-        System.out.println("Deposit.");
-       
-        try {
+    public static void handleLogin(User user, Scanner scanner) { // Done
+        
+    	if (user.getAccessLevel() == AccessLevel.MANAGER) {
+            managementMenu(scanner, (Manager) user);
+        } else if (user instanceof Client client) {
+            List<Account> accounts = client.getAccounts();
 
-            scanner.nextLine();
-        	
-            System.out.print("Enter account id: ");
-            Long accountId = Long.parseLong(scanner.nextLine().trim());
-            
-            System.out.print("Enter deposit amount: ");
-            Double amount = Double.parseDouble(scanner.nextLine().trim());
+            if (accounts.size() > 1) {
+                System.out.println("\nYou have multiple accounts. Please select one:");
 
-            OperationService operationService = new OperationService();
-            operationService.deposit(accountId, amount);
-            
-            System.out.println("Deposit successful!");
-        } catch (Exception e) {
-            System.out.println("Error during deposit: " + e.getMessage());
+                for (int i = 0; i < accounts.size(); i++) {
+                    Account acc = accounts.get(i);
+                    System.out.printf("%d. %s - Account No: %s - Balance: %.2f%n",
+                        i + 1, acc.getAccountType(), acc.getAccountNumber(), acc.getBalance());
+                }
+
+                int selectedIndex = -1;
+                while (selectedIndex < 1 || selectedIndex > accounts.size()) {
+                    System.out.print("Enter the number of the account you want to access: ");
+                    if (scanner.hasNextInt()) {
+                        selectedIndex = scanner.nextInt();
+                        scanner.nextLine();
+                    } else {
+                        scanner.nextLine();
+                        System.out.println("Invalid input. Please enter a number.");
+                    }
+                }
+
+                Account selectedAccount = accounts.get(selectedIndex - 1);
+                bankMenu(scanner, client, selectedAccount);
+
+            } else if (accounts.size() == 1) {
+                bankMenu(scanner, client, accounts.get(0));
+            } else {
+                System.out.println("You do not have any accounts linked to your profile.");
+            }
+        } else {
+            System.out.println("Unknown user type.");
         }
+    }
+    
+    public static Boolean exitSection(Scanner scanner) { // Done
+    	
+        System.out.println("\n\n\n\nExiting...");
+        return false;
+    	
+    }
+    
+// Management ##########################################################################################
+    
+    public static void managementMenu(Scanner scanner, Manager manager) { // Done
+    																	     	   	
+    	boolean running = true;
+
+        while (running) {
+            System.out.println("\n\n\n\n========= Management Menu =========");
+	        System.out.println("|| 1. Pending refund requests    ||");
+	        System.out.println("|| 2. Locked accounts            ||");
+	        
+	        if(manager.getId() == 1)
+	        	System.out.println("|| 3. Create manager             ||");
+	                    	        
+	        System.out.println("|| 0. Exit                       ||");
+            System.out.println("===================================");
+            System.out.print("Choose an option: ");
+
+            int option = scanner.nextInt();
+
+            switch (option) {
+                case 1:
+                	managerRefundRequestSection(scanner, manager);
+                    break;
+                case 2:
+                	lockedAccountsSection(scanner);
+                    break;
+                case 3:
+                	if (manager.getId() == 1)
+                        createManagerSection(scanner);
+                    else
+                        System.out.println("\n\n\n\nInvalid option! Please try again.");
+                    break;
+                case 0:
+                	running = exitSection(scanner);
+                    return;
+                default:
+                    System.out.println("\n\n\n\nInvalid option! Please try again.");
+            }
+        }
+    }
+    
+    public static void managerRefundRequestSection(Scanner scanner, Manager manager) { // Done
+        RefundRequestService refundRequestService = new RefundRequestService();
+        RefundRequestRepository refundRequestRepository = new RefundRequestRepository();
+
+        var pendingRequests = refundRequestRepository.findByStatus(RefundStatus.PENDING);
+
+        if (pendingRequests == null || pendingRequests.isEmpty()) {
+            System.out.println("\n\n\n\nThere are no pending refund requests.");
+            return;
+        }
+
+        System.out.println("\n\n\n\n=== Pending Refund Requests ===");
+        for (var request : pendingRequests) {
+            System.out.printf("ID: %d | Operation ID: %d | Client ID: %d | Requested on: %s%n",
+                    request.getId(),
+                    request.getOperation().getId(),
+                    request.getClient().getId(),
+                    request.getRequestDate());
+        }
+
+        System.out.print("\n\nEnter the ID of the refund request to process (or 0 to cancel): ");
+        Long requestId = scanner.nextLong();
+        scanner.nextLine();
+
+        if (requestId == 0) return;
+
+        System.out.print("\nApprove this refund? (y/n): ");
+        String input = scanner.nextLine().trim().toLowerCase();
+
+        try {
+            if (input.equals("y") || input.equals("yes")) {
+                refundRequestService.approveRefund(manager, requestId);
+                System.out.println("\n\nRefund approved successfully.");
+            } else if (input.equals("n") || input.equals("no")) {
+                refundRequestService.rejectRefund(manager, requestId);
+                System.out.println("\n\nRefund rejected successfully.");
+            } else {
+                System.out.println("\n\nInvalid choice.");
+            }
+        } catch (Exception e) {
+            System.out.println("\n\nError processing refund: " + e.getMessage());
+        }
+    }
+    
+    public static void lockedAccountsSection(Scanner scanner) { // Done
+    	UserService userService = new UserService();
+        List<User> blockedUsers = userService.findBlockedUsers();
+
+        if (blockedUsers == null || blockedUsers.isEmpty()) {
+            System.out.println("\n\nThere are no locked users.");
+            return;
+        }
+
+        System.out.println("\n\n\n\n=== Locked Users ===");
+        for (User user : blockedUsers) {
+            System.out.printf("ID: %d | Name: %s | Email: %s%n", user.getId(), user.getName(), user.getEmail());
+        }
+
+        System.out.print("\n\nEnter the ID of the user to unlock (or 0 to cancel): ");
+        Long userId = scanner.nextLong();
+        scanner.nextLine();
+
+        if (userId == 0) return;
+
+        User userToUnlock = userService.findById(userId);
+
+        if (userToUnlock == null || !userToUnlock.isBlocked()) {
+            System.out.println("\n\nInvalid ID or user is not locked.");
+            return;
+        }
+
+        System.out.print("\n\nDo you want to unlock this user? (y/n): ");
+        String confirmation = scanner.nextLine().trim().toLowerCase();
+
+        if (confirmation.equals("y") || confirmation.equals("yes")) {
+            userToUnlock.setBlocked(false);
+            userToUnlock.setFailedLoginAttempts(0);
+            userService.update(userToUnlock);
+            System.out.println("\n\nUser unlocked successfully.");
+        } else {
+            System.out.println("\n\nOperation canceled.");
+        }
+    }
+    
+    public static void createManagerSection(Scanner scanner) { // Done
+    	
+    	scanner.nextLine();
+
+        System.out.println("\n\n\n\n=== Create New Manager ===");
+
+        System.out.print("Name: ");
+        String name = scanner.nextLine().trim();
+
+        System.out.print("Email: ");
+        String email = scanner.nextLine().trim();
+
+        System.out.print("Password: ");
+        String password = scanner.nextLine().trim();
+
+        if (name.isBlank() || email.isBlank() || password.isBlank()) {
+            System.out.println("\n\nAll fields are required. Manager not created.");
+            return;
+        }
+
+        AuthService authService = new AuthService();
+        authService.registerManager(name, email, password);    	
+    }
+    
+  
+// Client ##########################################################################################
+    
+    public static void bankMenu(Scanner scanner, Client client, Account account) {	//
+        
+
+    	boolean running = true;
+
+        while (running) {
+            System.out.println("========= Bank Menu =========");
+            System.out.println("|| 1. Deposit              ||");
+            System.out.println("|| 2. Withdraw             ||");
+            System.out.println("|| 3. Check Balance        ||");
+            System.out.println("|| 4. Transfer             ||");
+            System.out.println("|| 5. Bank Statement       ||");
+            System.out.println("|| 6. Refund request list  ||");
+            System.out.println("|| 7. Create a new account ||");
+            System.out.println("|| 0. Exit                 ||");
+            System.out.println("=============================");
+            System.out.print("Choose an option: ");
+
+            int option = scanner.nextInt();
+
+            switch (option) {
+                case 1:
+                	depositSection(scanner);
+                    break;
+                case 2:
+                	withdrawSection(scanner, account);
+                    break;
+                case 3:
+                	checkBalanceSection(scanner);
+                    break;
+                case 4:
+                	transferSection(scanner, account);
+                    break;
+                case 5:
+                	bankStatementSection(scanner, client);
+                    break;
+                case 6:
+                	clientRefundRequestSection(scanner, client.getId());
+                    break;
+                case 7:
+                	createNewAccount(scanner);
+                    break;
+                case 0:
+                	running = exitSection(scanner);
+                    return;
+                default:
+                    System.out.println("Invalid option! Please try again.");
+            }
+        }
+    }
+        
+    public static void depositSection(Scanner scanner) { // Done
+    	
+    	 System.out.println("\n\n\n\n=== Deposit ===");
+
+    	    try {
+    	        scanner.nextLine(); 
+
+    	        System.out.print("Enter the account number: ");
+    	        String accountNumber = scanner.nextLine().trim();
+
+    	        AccountRepository accountRepository = new AccountRepository();
+    	        Account account = accountRepository.findByAccountNumber(accountNumber);
+
+    	        if (account == null) {
+    	            System.out.println("\n\nNo account found with the provided account number.");
+    	            return;
+    	        }
+
+    	        System.out.printf("\nAccount found:%n - Number: %s%n - Owner: %s%n",
+    	                account.getAccountNumber(),
+    	                account.getClient().getName());
+
+    	        System.out.print("\n\nEnter deposit amount: ");
+    	        Double amount = Double.parseDouble(scanner.nextLine().trim());
+
+    	        if (amount <= 0) {
+    	            System.out.println("Amount must be greater than zero.");
+    	            return;
+    	        }
+
+    	        System.out.printf("\n\nYou are about to deposit %.2f into account %s (Owner: %s). Confirm? (yes/no): ",
+    	                amount, account.getAccountNumber(), account.getClient().getName());
+
+    	        String confirmation = scanner.nextLine().trim().toLowerCase();
+    	        if (!confirmation.equals("yes") && !confirmation.equals("y")) {
+    	            System.out.println("\n\nDeposit cancelled.");
+    	            return;
+    	        }
+
+    	        OperationService operationService = new OperationService();
+    	        operationService.deposit(account.getId(), amount);
+
+    	        System.out.println("\n\nDeposit successful!");
+    	    } catch (Exception e) {
+    	        System.out.println("\n\nError during deposit: " + e.getMessage());
+    	    }
         
     }
     
-    public static void withdrawSection(Scanner scanner) { // Feito
+    public static void withdrawSection(Scanner scanner, Account account) { // Done
     	
-    	System.out.println("\n=== Withdraw ===");
+    	System.out.println("\n\n\n\n=== Withdraw ===");
         try {
         	
             scanner.nextLine();
-
-            System.out.print("Enter account id: ");
-            Long accountId = Long.parseLong(scanner.nextLine().trim());
             
             System.out.print("Enter withdrawal amount: ");
             Double amount = Double.parseDouble(scanner.nextLine().trim());
             
             OperationService operationService = new OperationService();
-            operationService.withdrawal(accountId, amount);
+            operationService.withdrawal(account.getId(), amount);
             
-            System.out.println("Withdrawal successful!");
+            System.out.println("\n\nWithdrawal successful!");
         } catch (Exception e) {
-            System.out.println("Error during withdrawal: " + e.getMessage());
+            System.out.println("\n\nError during withdrawal: " + e.getMessage());
         }
     }
 
-    public static void transferSection(Scanner scanner) { // Feito -- Lembrar de lógica de salvar como depósito na conta source.
+    public static void transferSection(Scanner scanner, Account account) { // Done
     	
-    	System.out.println("\n=== Transfer ===");
+    	System.out.println("\n\n\n\n=== Transfer ===");
         try {
 
             scanner.nextLine();
-
-            System.out.print("Enter source account id: ");
-            Long sourceAccountId = Long.parseLong(scanner.nextLine().trim());
             
-            System.out.print("Enter destination account id: ");
-            Long destinationAccountId = Long.parseLong(scanner.nextLine().trim());
+            System.out.print("Enter destination account number: ");
+	        String destinationAccountNumber = scanner.nextLine().trim();
+            
+            AccountRepository accountRepository = new AccountRepository();
+            
+            Account destinationAccount = accountRepository.findByAccountNumber(destinationAccountNumber);
+            
+            if (destinationAccount == null) {
+                System.out.println("\n\nDestination account not found.");
+                return;
+            }
             
             System.out.print("Enter transfer amount: ");
             Double amount = Double.parseDouble(scanner.nextLine().trim());
             
-            OperationService operationService = new OperationService();
-            operationService.transfer(sourceAccountId, destinationAccountId, amount);
+            if(amount > account.getBalance()) {
+            	System.out.println("\n\nYou do not have enough balance to make this transfer.");
+                return;
+            }
             
-            System.out.println("Transfer successful!");
+            System.out.printf("You are about to transfer %.2f from account %s (Owner: %s) to account %s (Owner: %s). Confirm? (yes/no): ",
+                    amount, 
+                    account.getAccountNumber(), account.getClient().getName(),
+                    destinationAccount.getAccountNumber(), destinationAccount.getClient().getName());
+            String confirmation = scanner.nextLine().trim().toLowerCase();
+            
+            
+            
+            if (!confirmation.equals("yes") && !confirmation.equals("y")) {
+                System.out.println("\n\nTransfer cancelled.");
+                return;
+            }
+            
+            OperationService operationService = new OperationService();
+            operationService.transfer(account.getId(), destinationAccount.getId(), amount);
+            
+            System.out.println("\n\nTransfer successful!");
         } catch (Exception e) {
-            System.out.println("Error during transfer: " + e.getMessage());
+            System.out.println("\n\nError during transfer: " + e.getMessage());
         }
-
     }
     
-    public static void clientRefundRequestSection(Scanner scanner, Long clientId) { // Feito
-        RefundRequestService refundRequestService = new RefundRequestService();
+    public static void clientRefundRequestSection(Scanner scanner, Long clientId) { //
+        
+    	RefundRequestService refundRequestService = new RefundRequestService();
 
         System.out.println("\n=== Refund Request Menu ===");
         System.out.println("1. Request a refund");
@@ -455,7 +622,7 @@ public class App {
         }
     }
     
-    public static void bankStatementSection(Scanner scanner, Client client) { // Feito
+    public static void bankStatementSection(Scanner scanner, Client client) { //
         System.out.println("\n=== Bank Statement Menu ===");
         System.out.println("0. Exit");
         System.out.println("1. View general statement");
@@ -463,6 +630,7 @@ public class App {
         System.out.println("3. View withdraw statement");
         System.out.println("4. View transfer statement");
         System.out.print("Choose an option: ");
+        
         int option = scanner.nextInt();
         scanner.nextLine(); 
 
@@ -538,8 +706,11 @@ public class App {
         }
     }
     
-    public static void checkBalanceSection(Scanner scanner) { // Falta
-        System.out.println("Check Balance.");
+    public static void createNewAccount(Scanner scanner) { //
+    	
+    }
+    
+    public static void checkBalanceSection(Scanner scanner) { //
     	
     }
     
