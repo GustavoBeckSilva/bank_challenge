@@ -5,6 +5,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -21,15 +22,15 @@ public class StatementService {
     private final OperationRepository operationRepository = new OperationRepository();
     private final StatementRepository statementRepository = new StatementRepository();
    
-    
-    
     public List<Operation> viewStatement(Long accountId, LocalDateTime periodStart, LocalDateTime periodEnd) {
 
         List<Operation> allOps = operationRepository.findByAccountId(accountId);
+        
         if (allOps == null) {
             System.out.println("No operations found for account " + accountId);
             return null;
         }
+        
         return allOps.stream()
                 .filter(op -> !op.getOperationDate().isBefore(periodStart) &&
                               !op.getOperationDate().isAfter(periodEnd))
@@ -78,6 +79,11 @@ public class StatementService {
     }
     
     public boolean exportStatementToCSV(List<Operation> operations, String filePath) {
+        if (operations == null || operations.isEmpty()) {
+            System.out.println("No operations provided for export.");
+            return false;
+        }
+
         try (PrintWriter writer = new PrintWriter(new File(filePath))) {
             writer.println("ID,Type,Amount,Date");
 
@@ -89,48 +95,47 @@ public class StatementService {
                     op.getOperationDate().toString()
                 );
             }
+
+            // Persistindo o Statement após exportar com sucesso
+            Statement statement = new Statement();
+            statement.setAccount(operations.get(0).getAccount());
+
+            // Calcula o início e o fim do período com base nas operações
+            LocalDateTime periodStart = operations.stream()
+                    .map(Operation::getOperationDate)
+                    .min(LocalDateTime::compareTo)
+                    .orElse(LocalDateTime.now());
+
+            LocalDateTime periodEnd = operations.stream()
+                    .map(Operation::getOperationDate)
+                    .max(LocalDateTime::compareTo)
+                    .orElse(LocalDateTime.now());
+
+            statement.setPeriodStart(periodStart);
+            statement.setPeriodEnd(periodEnd);
+            statement.setGeneratedDate(LocalDateTime.now());
+            statement.setCsvFilePath(filePath);
+
+            statementRepository.save(statement);
+
             return true;
         } catch (IOException e) {
             e.printStackTrace();
             return false;
         }
     }
-
-    public Statement exportStatementToCSV(Long accountId, LocalDateTime periodStart, LocalDateTime periodEnd, String filePath) {
-        
-    	List<Operation> operations = viewStatement(accountId, periodStart, periodEnd);
-        if (operations == null || operations.isEmpty()) {
-            System.out.println("No operations found for account " + accountId + " in the given period.");
-            return null;
-        }
-
-        boolean exportSuccess = exportOperationsToCSV(operations, filePath);
-        if (!exportSuccess) {
-            System.out.println("Error generating CSV file.");
-            return null;
-        }
-
-        Statement statement = new Statement();
-
-        statement.setAccount(operations.get(0).getAccount());
-        statement.setPeriodStart(periodStart);
-        statement.setPeriodEnd(periodEnd);
-        statement.setGeneratedDate(LocalDateTime.now());
-        statement.setCsvFilePath(filePath);
-
-        statementRepository.save(statement);
-        return statement;
-    }
     
     private boolean exportOperationsToCSV(List<Operation> operations, String filePath) {
         try (FileWriter writer = new FileWriter(filePath)) {
             writer.write("OperationID,Type,Amount,Date\n");
             for (Operation op : operations) {
-                writer.write(String.format("%d,%s,%.2f,%s\n",
-                        op.getId(),
-                        op.getOperationType().name(),
-                        op.getAmount(),
-                        op.getOperationDate().toString()));
+            	DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+
+            	writer.write(String.format("%d,%s,%.2f,%s\n",
+            	    op.getId(),
+            	    op.getOperationType().name(),
+            	    op.getAmount(),
+            	    op.getOperationDate().format(formatter)));
             }
             writer.flush();
             return true;
@@ -141,23 +146,26 @@ public class StatementService {
     }
     
     public Statement createStatementRecord(Long accountId, LocalDateTime periodStart, LocalDateTime periodEnd, String filePath, List<Operation> operations) {
-    	 if (operations == null || operations.isEmpty()) {
-    	        System.out.println("No operations to record in statement.");
-    	        return null;
-    	    }
+        
+    	if (operations == null || operations.isEmpty()) {
+            System.out.println("No operations to record in statement.");
+            return null;
+        }
 
-    	    Account account = operations.get(0).getAccount(); 
+        Account account = operations.get(0).getAccount();
 
-    	    Statement statement = new Statement();
-    	    statement.setAccount(account);
-    	    statement.setPeriodStart(periodStart);
-    	    statement.setPeriodEnd(periodEnd);
-    	    statement.setGeneratedDate(LocalDateTime.now());
-    	    statement.setCsvFilePath(filePath);
+        Statement statement = new Statement();
+        statement.setAccount(account);
+        statement.setPeriodStart(periodStart);
+        statement.setPeriodEnd(periodEnd);
+        statement.setGeneratedDate(LocalDateTime.now());
+        statement.setCsvFilePath(filePath);
 
-    	    accountService.addStatementToAccount(account, statement);
+        account.addStatement(statement);
 
-    	    return statement;
+        accountService.updateAccount(account);
+
+        return statement;
     }
     
 }

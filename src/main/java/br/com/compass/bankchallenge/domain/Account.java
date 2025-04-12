@@ -41,7 +41,7 @@ public class Account {
 	private AccountType accountType;
 	
     @OneToMany(mappedBy = "account", cascade = CascadeType.ALL, orphanRemoval = true)
-	private List<Statement> statements;
+	private List<Statement> statements = new ArrayList<>();
     
     @OneToMany(mappedBy = "account", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Operation> operations = new ArrayList<>();
@@ -127,7 +127,7 @@ public class Account {
     }
     
     public void addStatement(Statement statement) {
-        statements.add(statement);
+        this.statements.add(statement);
         statement.setAccount(this);
     }
 	
