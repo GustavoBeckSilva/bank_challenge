@@ -1,6 +1,7 @@
 package br.com.compass.bankchallenge.domain;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 import br.com.compass.bankchallenge.domain.enums.RefundStatus;
 import jakarta.persistence.Entity;
@@ -37,7 +38,7 @@ public class RefundRequest {
     @Enumerated(EnumType.STRING)
     private RefundStatus status = RefundStatus.PENDING;;
 
-    private LocalDateTime requestDate = LocalDateTime.now();;
+    private LocalDateTime requestDate = LocalDateTime.now(ZoneId.of("America/Sao_Paulo"));
 
     private LocalDateTime responseDate;
     

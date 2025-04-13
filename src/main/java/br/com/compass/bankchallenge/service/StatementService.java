@@ -1,11 +1,10 @@
 package br.com.compass.bankchallenge.service;
 
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -102,16 +101,16 @@ public class StatementService {
             LocalDateTime periodStart = operations.stream()
                     .map(Operation::getOperationDate)
                     .min(LocalDateTime::compareTo)
-                    .orElse(LocalDateTime.now());
+                    .orElse(LocalDateTime.now(ZoneId.of("America/Sao_Paulo")));
 
             LocalDateTime periodEnd = operations.stream()
                     .map(Operation::getOperationDate)
                     .max(LocalDateTime::compareTo)
-                    .orElse(LocalDateTime.now());
+                    .orElse(LocalDateTime.now(ZoneId.of("America/Sao_Paulo")));
 
             statement.setPeriodStart(periodStart);
             statement.setPeriodEnd(periodEnd);
-            statement.setGeneratedDate(LocalDateTime.now());
+            statement.setGeneratedDate(LocalDateTime.now(ZoneId.of("America/Sao_Paulo")));
             statement.setCsvFilePath(filePath);
 
             statementRepository.save(statement);
@@ -136,7 +135,7 @@ public class StatementService {
         statement.setAccount(account);
         statement.setPeriodStart(periodStart);
         statement.setPeriodEnd(periodEnd);
-        statement.setGeneratedDate(LocalDateTime.now());
+        statement.setGeneratedDate(LocalDateTime.now(ZoneId.of("America/Sao_Paulo")));
         statement.setCsvFilePath(filePath);
 
         account.addStatement(statement);

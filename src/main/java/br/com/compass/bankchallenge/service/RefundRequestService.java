@@ -1,9 +1,8 @@
 package br.com.compass.bankchallenge.service;
 
 import java.time.LocalDateTime;
-import java.util.List;
+import java.time.ZoneId;
 
-import br.com.compass.bankchallenge.domain.Account;
 import br.com.compass.bankchallenge.domain.Manager;
 import br.com.compass.bankchallenge.domain.Operation;
 import br.com.compass.bankchallenge.domain.RefundRequest;
@@ -27,7 +26,7 @@ public class RefundRequestService {
         request.setClient(operation.getAccount().getClient());
         request.setOperation(operation);
         request.setStatus(RefundStatus.PENDING);
-        request.setRequestDate(LocalDateTime.now());
+        request.setRequestDate(LocalDateTime.now(ZoneId.of("America/Sao_Paulo")));
 
         refundRequestRepository.save(request);
     }
@@ -53,7 +52,7 @@ public class RefundRequestService {
 
         refundRequest.setManager(manager);
         refundRequest.setStatus(RefundStatus.APPROVED);
-        refundRequest.setResponseDate(LocalDateTime.now());
+        refundRequest.setResponseDate(LocalDateTime.now(ZoneId.of("America/Sao_Paulo")));
 
         refundRequestRepository.update(refundRequest);
     }
@@ -67,7 +66,7 @@ public class RefundRequestService {
 
         refundRequest.setManager(manager);
         refundRequest.setStatus(RefundStatus.REJECTED);
-        refundRequest.setResponseDate(LocalDateTime.now());
+        refundRequest.setResponseDate(LocalDateTime.now(ZoneId.of("America/Sao_Paulo")));
         refundRequestRepository.update(refundRequest);
     }
 }

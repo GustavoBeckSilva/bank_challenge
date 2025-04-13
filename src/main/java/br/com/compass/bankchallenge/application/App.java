@@ -3,6 +3,7 @@ package br.com.compass.bankchallenge.application;
 import java.io.File;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
@@ -593,8 +594,12 @@ public class App {
         switch (option) {
             case 1:
             	StatementService statementService = new StatementService();
-            	List<Operation> transfers = statementService.viewTransferStatement(account, LocalDateTime.MIN, LocalDateTime.now());
-                
+            	
+            	ZoneId zone = ZoneId.of("America/Sao_Paulo");
+            	
+            	List<Operation> transfers = statementService.viewTransferStatement(account, LocalDateTime.MIN, LocalDateTime.now(zone));
+            	
+            	
             	if (transfers.isEmpty()) {
                     System.out.println("\n\nNo transfers found for your account.");
                     return;
@@ -686,7 +691,7 @@ public class App {
             return;
         }
         
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now(ZoneId.of("America/Sao_Paulo"));
         if (start.isAfter(now) || end.isAfter(now)) {
             System.out.println("\n\nDates cannot be in the future.");
             return;

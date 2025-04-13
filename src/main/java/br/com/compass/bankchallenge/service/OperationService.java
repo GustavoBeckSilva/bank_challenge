@@ -1,6 +1,7 @@
 package br.com.compass.bankchallenge.service;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 
 import br.com.compass.bankchallenge.domain.Account;
@@ -15,7 +16,7 @@ public class OperationService {
      private AccountRepository accountRepository = new AccountRepository();
 
 	    public void createOperation(Operation operation) {
-	        operation.setOperationDate(LocalDateTime.now());
+	        operation.setOperationDate(LocalDateTime.now(ZoneId.of("America/Sao_Paulo")));
 	        operationRepository.save(operation);
 	    }
 
@@ -45,7 +46,7 @@ public class OperationService {
 	        op.setAccount(account);
 	        op.setAmount(amount);
 	        op.setOperationType(OperationType.WITHDRAWAL);
-	        op.setOperationDate(LocalDateTime.now());
+	        op.setOperationDate(LocalDateTime.now(ZoneId.of("America/Sao_Paulo")));
 	        operationRepository.save(op);
 	    }
 
@@ -59,7 +60,7 @@ public class OperationService {
 	        op.setAccount(account);
 	        op.setAmount(amount);
 	        op.setOperationType(OperationType.DEPOSIT);
-	        op.setOperationDate(LocalDateTime.now());
+	        op.setOperationDate(LocalDateTime.now(ZoneId.of("America/Sao_Paulo")));
 	        operationRepository.save(op);
 	    }
 
@@ -82,7 +83,7 @@ public class OperationService {
 	        opTransfer.setTargetAccount(destinationAccount);
 	        opTransfer.setAmount(amount);
 	        opTransfer.setOperationType(OperationType.TRANSFER);
-	        opTransfer.setOperationDate(LocalDateTime.now());
+	        opTransfer.setOperationDate(LocalDateTime.now(ZoneId.of("America/Sao_Paulo")));
 
 	        operationRepository.save(opTransfer);
 	        
