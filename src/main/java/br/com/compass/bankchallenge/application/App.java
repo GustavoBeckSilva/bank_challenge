@@ -52,12 +52,11 @@ public class App {
     
 // Public ##########################################################################################   
     
-    public static void mainMenu(Scanner scanner) {	
+    public static void mainMenu(Scanner scanner) {	// Done
         
     	boolean running = true;
 
         while (running) {
-
             System.out.println("\n\n\n\n========= Main Menu =========");
             System.out.println("|| 1. Login                ||");
             System.out.println("|| 2. Account Opening      ||");
@@ -65,20 +64,26 @@ public class App {
             System.out.println("=============================");
             System.out.print("Choose an option: ");
 
-            int option = scanner.nextInt();
-            scanner.nextLine();
+            int option = 0;
+            try {
+                String input = scanner.nextLine().trim();
+                option = Integer.parseInt(input);
+            } catch (NumberFormatException e) {
+                System.out.println("Invalid option! Please enter a number.");
+                continue; 
+            }
 
             switch (option) {
-            	case 1:
-            		User user = loginSection(scanner);
-            	    if (user != null) 
-            	    	handleLogin(user, scanner);
-                	break;
+                case 1:
+                    User user = loginSection(scanner);
+                    if (user != null) 
+                        handleLogin(user, scanner);
+                    break;
                 case 2:
                     accountOpeningSection(scanner);
                     break;
                 case 0:
-                	running = exitSection(scanner);
+                    running = exitSection(scanner);
                     break;
                 default:
                     System.out.println("Invalid option! Please try again.");
@@ -86,7 +91,7 @@ public class App {
         }
     }
     
-    public static User loginSection(Scanner scanner) { // Done
+    public static User loginSection(Scanner scanner) { // 
     	
         AuthService authService = new AuthService();
 
@@ -116,7 +121,7 @@ public class App {
         }
     }
     
-    public static void accountOpeningSection(Scanner scanner) { // Done
+    public static void accountOpeningSection(Scanner scanner) { // 
     	
         System.out.println("\n=== Account Opening ===");
         System.out.print("Enter your CPF: ");
@@ -202,7 +207,7 @@ public class App {
         }
     }
     
-    public static void handleLogin(User user, Scanner scanner) { // Done
+    public static void handleLogin(User user, Scanner scanner) { // 
         
     	if (user.getAccessLevel() == AccessLevel.MANAGER) {
             managementMenu(scanner, (Manager) user);
@@ -243,7 +248,7 @@ public class App {
         }
     }
     
-    public static Boolean exitSection(Scanner scanner) { // Done
+    public static Boolean exitSection(Scanner scanner) { // 
     	
         System.out.println("\n\n\n\nExiting...");
         return false;
@@ -252,7 +257,7 @@ public class App {
     
 // Management ##########################################################################################
     
-    public static void managementMenu(Scanner scanner, Manager manager) { // Done
+    public static void managementMenu(Scanner scanner, Manager manager) { // 
     																	     	   	
     	boolean running = true;
 
@@ -292,7 +297,7 @@ public class App {
         }
     }
     
-    public static void managerRefundRequestSection(Scanner scanner, Manager manager) { // Done
+    public static void managerRefundRequestSection(Scanner scanner, Manager manager) { // 
         RefundRequestService refundRequestService = new RefundRequestService();
         RefundRequestRepository refundRequestRepository = new RefundRequestRepository();
 
@@ -336,7 +341,7 @@ public class App {
         }
     }
     
-    public static void lockedAccountsSection(Scanner scanner) { // Done
+    public static void lockedAccountsSection(Scanner scanner) { // 
     	UserService userService = new UserService();
         List<User> blockedUsers = userService.findBlockedUsers();
 
@@ -376,7 +381,7 @@ public class App {
         }
     }
     
-    public static void createManagerSection(Scanner scanner) { // Done
+    public static void createManagerSection(Scanner scanner) { // 
     	
     	scanner.nextLine();
 
@@ -453,7 +458,7 @@ public class App {
         }
     }
         
-    public static void depositSection(Scanner scanner, Account account) { // Done
+    public static void depositSection(Scanner scanner, Account account) { // 
     	
     	System.out.println("\n\n\n\n=== Deposit ===");
         try {
@@ -473,7 +478,7 @@ public class App {
         } 
     }
     
-    public static void withdrawSection(Scanner scanner, Account account) { // Done
+    public static void withdrawSection(Scanner scanner, Account account) { // 
     	
     	System.out.println("\n\n\n\n=== Withdraw ===");
 	    try {
@@ -493,7 +498,7 @@ public class App {
 	    }
     }
 
-    public static void transferSection(Scanner scanner, Account account) { // Done
+    public static void transferSection(Scanner scanner, Account account) { // 
     	
     	System.out.println("\n\n\n\n=== Transfer ===");
         try {
@@ -541,7 +546,7 @@ public class App {
         }
     }
     
-    public static void clientRefundRequestSection(Scanner scanner, Account account, Client client) { // Done
+    public static void clientRefundRequestSection(Scanner scanner, Account account, Client client) { // 
         
     	RefundRequestService refundRequestService = new RefundRequestService();
 
@@ -609,7 +614,7 @@ public class App {
         }
     }
     
-    public static void bankStatementSection(Scanner scanner, Client client, Account account) { // Done
+    public static void bankStatementSection(Scanner scanner, Client client, Account account) { // 
         
     	System.out.println("\n\n=== Bank Statement Menu ===");
         System.out.println("0. Exit");
@@ -720,7 +725,7 @@ public class App {
         }
     }
     
-    public static void createNewAccount(Scanner scanner, Client client) { // Done
+    public static void createNewAccount(Scanner scanner, Client client) { // 
     	
     	System.out.println("\n=== New Account ===");
                     
@@ -764,7 +769,7 @@ public class App {
             
     } 
         
-    public static void checkBalanceSection(Scanner scanner, Account account) { // Done
+    public static void checkBalanceSection(Scanner scanner, Account account) { // 
     	
         scanner.nextLine(); 
         
@@ -781,7 +786,7 @@ public class App {
         scanner.nextLine();
     }
     
-    // Auxiliar methods
+// Auxiliary methods ##########################################################################################
     
     private static Account refreshAccount(Account account) {
         return new AccountRepository().findById(account.getId());
