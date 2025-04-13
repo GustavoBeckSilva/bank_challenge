@@ -92,7 +92,7 @@ public class App {
 
         try {
             System.out.println("\n\n\n\n========= Login =========");
-            System.out.print("Enter your email: ");
+            System.out.print("Enter your login: ");
             String email = scanner.nextLine().trim();
 
             System.out.print("Enter password: ");
@@ -119,12 +119,12 @@ public class App {
     public static void accountOpeningSection(Scanner scanner) { // Done
     	
         System.out.println("\n=== Account Opening ===");
-        System.out.print("Enter your email: ");
-        String email = scanner.nextLine().trim();
+        System.out.print("Enter your CPF: ");
+        String cpf = scanner.nextLine().trim();
 
-        UserService userService = new UserService();
+        ClientService clientService = new ClientService();
         
-        if (userService.getUserByEmail(email) == null) {
+        if (clientService.findByCpf(cpf) == null) {
 
             System.out.print("Enter your name: ");
             String name = scanner.nextLine();
@@ -132,8 +132,8 @@ public class App {
             System.out.print("Enter a password: ");
             String password = scanner.nextLine();
             
-            System.out.print("Enter your CPF: ");
-            String cpf = scanner.nextLine();
+            System.out.print("Enter your email: ");
+            String email = scanner.nextLine();
             
             System.out.print("Enter your phone number: ");
             String phone = scanner.nextLine();
@@ -174,13 +174,11 @@ public class App {
                 System.out.println("Invalid account type selected. Defaulting to checking.");
                 accountType = AccountType.CHECKING;
             }
-            
-            ClientService clientService = new ClientService();
-            
+                        
             try {
                 clientService.registerClient(name, email, password, cpf, phone, birthDate);
 
-                Client client = (Client) userService.getUserByEmail(email);
+                Client client = (Client) clientService.findByCpf(cpf);
                 
                 Account newAccount = new Account(client, accountType);
                 client.addAccount(newAccount);
@@ -198,15 +196,8 @@ public class App {
         
         else {
 
-            System.out.println("\n\n\n\nThere is already a user with that email.");
-            System.out.print("\n\nDo you want to log in now to open a new linked account? (y/n): ");
-            String answer = scanner.nextLine().trim().toLowerCase();
-            
-            if (answer.equals("y") || answer.equals("yes"))
-            	loginSection(scanner);
-            
-            else
-                System.out.println("\n\n\n\nReturning to the main menu...");
+            System.out.println("\n\n\n\nThere is already a client with that cpf.");
+            System.out.println("\n\n\n\nReturning to the main menu...");
             
         }
     }
@@ -413,8 +404,7 @@ public class App {
 // Client ##########################################################################################
     
     public static void bankMenu(Scanner scanner, Client client, Account account) {	//
-        
-
+       
     	boolean running = true;
 
         while (running) {
@@ -434,7 +424,7 @@ public class App {
 
             switch (option) {
                 case 1:
-                	depositSection(scanner);
+                	depositSection(scanner, account);
                     break;
                 case 2:
                 	withdrawSection(scanner, account);
@@ -463,117 +453,88 @@ public class App {
         }
     }
         
-    public static void depositSection(Scanner scanner) { // Done
+    public static void depositSection(Scanner scanner, Account account) { // Done
     	
-    	 System.out.println("\n\n\n\n=== Deposit ===");
+    	System.out.println("\n\n\n\n=== Deposit ===");
+        try {
+            scanner.nextLine();
+            
+            System.out.print("Enter Deposit amount: ");
+            Double amount = Double.parseDouble(scanner.nextLine().trim());
 
-    	    try {
-    	        scanner.nextLine(); 
+            account = refreshAccount(account);
 
-    	        System.out.print("Enter the account number: ");
-    	        String accountNumber = scanner.nextLine().trim();
+            OperationService operationService = new OperationService();
+            operationService.deposit(account.getId(), amount);
 
-    	        AccountRepository accountRepository = new AccountRepository();
-    	        Account account = accountRepository.findByAccountNumber(accountNumber);
-
-    	        if (account == null) {
-    	            System.out.println("\n\nNo account found with the provided account number.");
-    	            return;
-    	        }
-
-    	        System.out.printf("\nAccount found:%n - Number: %s%n - Owner: %s%n",
-    	                account.getAccountNumber(),
-    	                account.getClient().getName());
-
-    	        System.out.print("\n\nEnter deposit amount: ");
-    	        Double amount = Double.parseDouble(scanner.nextLine().trim());
-
-    	        if (amount <= 0) {
-    	            System.out.println("Amount must be greater than zero.");
-    	            return;
-    	        }
-
-    	        System.out.printf("\n\nYou are about to deposit %.2f into account %s (Owner: %s). Confirm? (yes/no): ",
-    	                amount, account.getAccountNumber(), account.getClient().getName());
-
-    	        String confirmation = scanner.nextLine().trim().toLowerCase();
-    	        if (!confirmation.equals("yes") && !confirmation.equals("y")) {
-    	            System.out.println("\n\nDeposit cancelled.");
-    	            return;
-    	        }
-
-    	        OperationService operationService = new OperationService();
-    	        operationService.deposit(account.getId(), amount);
-
-    	        System.out.println("\n\nDeposit successful!");
-    	    } catch (Exception e) {
-    	        System.out.println("\n\nError during deposit: " + e.getMessage());
-    	    }
-        
+            System.out.println("\n\nDeposit successful!");
+        } catch (Exception e) {
+            System.out.println("\n\nError during deposit: " + e.getMessage());
+        } 
     }
     
     public static void withdrawSection(Scanner scanner, Account account) { // Done
     	
     	System.out.println("\n\n\n\n=== Withdraw ===");
-        try {
-        	
-            scanner.nextLine();
-            
-            System.out.print("Enter withdrawal amount: ");
-            Double amount = Double.parseDouble(scanner.nextLine().trim());
-            
-            OperationService operationService = new OperationService();
-            operationService.withdrawal(account.getId(), amount);
-            
-            System.out.println("\n\nWithdrawal successful!");
-        } catch (Exception e) {
-            System.out.println("\n\nError during withdrawal: " + e.getMessage());
-        }
+	    try {
+	        scanner.nextLine();
+
+	        System.out.print("Enter withdrawal amount: ");
+	        Double amount = Double.parseDouble(scanner.nextLine().trim());
+
+	        account = refreshAccount(account);
+
+	        OperationService operationService = new OperationService();
+	        operationService.withdrawal(account.getId(), amount);
+
+	        System.out.println("\n\nWithdrawal successful!");
+	    } catch (Exception e) {
+	        System.out.println("\n\nError during withdrawal: " + e.getMessage());
+	    }
     }
 
     public static void transferSection(Scanner scanner, Account account) { // Done
     	
     	System.out.println("\n\n\n\n=== Transfer ===");
         try {
-
             scanner.nextLine();
-            
+
             System.out.print("Enter destination account number: ");
-	        String destinationAccountNumber = scanner.nextLine().trim();
-            
+            String destinationAccountNumber = scanner.nextLine().trim();
+
             AccountRepository accountRepository = new AccountRepository();
-            
             Account destinationAccount = accountRepository.findByAccountNumber(destinationAccountNumber);
-            
+
             if (destinationAccount == null) {
                 System.out.println("\n\nDestination account not found.");
                 return;
             }
-            
+
             System.out.print("Enter transfer amount: ");
             Double amount = Double.parseDouble(scanner.nextLine().trim());
-            
-            if(amount > account.getBalance()) {
-            	System.out.println("\n\nYou do not have enough balance to make this transfer.");
+
+            account = refreshAccount(account);
+
+            if (amount > account.getBalance()) {
+                System.out.println("\n\nYou do not have enough balance to make this transfer.");
                 return;
             }
-            
+
             System.out.printf("You are about to transfer %.2f from account %s (Owner: %s) to account %s (Owner: %s). Confirm? (yes/no): ",
-                    amount, 
+                    amount,
                     account.getAccountNumber(), account.getClient().getName(),
                     destinationAccount.getAccountNumber(), destinationAccount.getClient().getName());
+
             String confirmation = scanner.nextLine().trim().toLowerCase();
-            
-            
-            
+
             if (!confirmation.equals("yes") && !confirmation.equals("y")) {
                 System.out.println("\n\nTransfer cancelled.");
                 return;
             }
-            
+
             OperationService operationService = new OperationService();
             operationService.transfer(account.getId(), destinationAccount.getId(), amount);
-            
+
             System.out.println("\n\nTransfer successful!");
         } catch (Exception e) {
             System.out.println("\n\nError during transfer: " + e.getMessage());
@@ -806,15 +767,24 @@ public class App {
     public static void checkBalanceSection(Scanner scanner, Account account) { // Done
     	
         scanner.nextLine(); 
+        
+        AccountRepository accountRepository = new AccountRepository();
+        Account refreshedAccount = accountRepository.findById(account.getId());
     	
         System.out.println("\n\n=== Check Balance ===");
         System.out.println("\nAccount Details:");
-        System.out.printf("Account Number: %s%n", account.getAccountNumber());
-        System.out.printf("Account Owner: %s%n", account.getClient().getName());
-        System.out.printf("Current Balance: $ %.2f%n", account.getBalance());
+        System.out.printf("Account Number: %s%n", refreshedAccount.getAccountNumber());
+        System.out.printf("Account Owner: %s%n", refreshedAccount.getClient().getName());
+        System.out.printf("Current Balance: $ %.2f%n", refreshedAccount.getBalance());
         
         System.out.print("\n\nPress Enter to continue: ");
         scanner.nextLine();
+    }
+    
+    // Auxiliar methods
+    
+    private static Account refreshAccount(Account account) {
+        return new AccountRepository().findById(account.getId());
     }
     
 }

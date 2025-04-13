@@ -13,6 +13,8 @@ public class UserService {
         return userRepository.findByEmail(email);
     }
     
+    
+    
     public List<User> findBlockedUsers() {
         return new UserRepository().findByBlocked(true);
     }

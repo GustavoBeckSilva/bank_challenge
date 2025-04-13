@@ -1,9 +1,11 @@
 package br.com.compass.bankchallenge.service;
 
+import br.com.compass.bankchallenge.domain.Client;
 import br.com.compass.bankchallenge.domain.Manager;
 import br.com.compass.bankchallenge.domain.User;
 import br.com.compass.bankchallenge.domain.enums.AccessLevel;
 import br.com.compass.bankchallenge.util.JPAUtil;
+import br.com.compass.bankchallenge.util.LoginIdentifierUtil;
 import br.com.compass.bankchallenge.util.SecurityUtil;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityTransaction;
@@ -11,14 +13,26 @@ import jakarta.persistence.NoResultException;
 
 public class AuthService {
 
-	public User login(String email, String password) {
+	public User login(String input, String password) {
 	    EntityManager em = JPAUtil.getEntityManagerFactory().createEntityManager();
 	    EntityTransaction tx = null;
-
 	    try {
-	        User user = em.createQuery("SELECT u FROM User u WHERE u.email = :email", User.class)
-	                      .setParameter("email", email)
-	                      .getSingleResult();
+	        User user = null;
+
+	        if (LoginIdentifierUtil.isCPF(input)) {
+	            user = em.createQuery("SELECT c FROM Client c WHERE c.cpf = :input", Client.class)
+	                     .setParameter("input", input)
+	                     .getSingleResult();
+	        }
+
+	        else if (LoginIdentifierUtil.isEmail(input)) {
+	            user = em.createQuery("SELECT m FROM Manager m WHERE m.email = :input", Manager.class)
+	                     .setParameter("input", input)
+	                     .getSingleResult();
+	        } else {
+	            System.out.println("Invalid identification format. Enter a valid CPF or email.\r\n");
+	            return null;
+	        }
 
 	        if (user.isBlocked()) {
 	            System.out.println("\n\nThis account is locked. Please contact a manager.");
@@ -48,7 +62,14 @@ public class AuthService {
 	    } catch (NoResultException e) {
 	        System.out.println("User not found");
 	        return null;
-	    } finally {
+	    } catch (Exception e) {
+	    	if (tx != null && tx.isActive())
+	            tx.rollback();
+	        
+	        e.printStackTrace();
+	        return null;
+		}
+	    finally {
 	        if (em.isOpen()) {
 	            em.close();
 	        }
@@ -60,11 +81,32 @@ public class AuthService {
 	    EntityTransaction tx = em.getTransaction();
 
 	    try {
-	        Long count = em.createQuery("SELECT COUNT(u) FROM User u WHERE u.email = :email", Long.class)
-	                       .setParameter("email", user.getEmail())
-	                       .getSingleResult();
-	        if (count > 0) {
-	            System.out.println("Email already registered.");
+	    	boolean userExists;
+
+	        if (user instanceof Client client) {
+	            userExists = em.createQuery("SELECT COUNT(c) FROM Client c WHERE c.cpf = :cpf", Long.class)
+	                           .setParameter("cpf", client.getCpf())
+	                           .getSingleResult() > 0;
+
+	            if (userExists) {
+	                System.out.println("CPF already registered for a client.");
+	                return;
+	            }
+	        } 
+	        
+	        else if (user instanceof Manager manager) {
+	            userExists = em.createQuery("SELECT COUNT(m) FROM Manager m WHERE m.email = :email", Long.class)
+	                           .setParameter("email", manager.getEmail())
+	                           .getSingleResult() > 0;
+
+	            if (userExists) {
+	                System.out.println("Email already registered for a manager.");
+	                return;
+	            }
+	        } 
+	        
+	        else {
+	            System.out.println("Unsupported user type.");
 	            return;
 	        }
 
@@ -72,7 +114,7 @@ public class AuthService {
 	        user.setPassword(SecurityUtil.hashPassword(user.getPassword()));
 	        em.persist(user);
 	        tx.commit();
-	        System.out.println("User registered successfully: " + user.getEmail());
+	        System.out.println("User registered successfully");
 	    } catch (Exception e) {
 	        if (tx.isActive()) {
 	            tx.rollback();
