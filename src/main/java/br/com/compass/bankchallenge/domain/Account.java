@@ -2,7 +2,7 @@ package br.com.compass.bankchallenge.domain;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
+import java.util.Random;
 
 import br.com.compass.bankchallenge.domain.enums.AccountType;
 import jakarta.persistence.CascadeType;
@@ -113,7 +113,10 @@ public class Account {
 	// Specific methods
 	
 	private String generateAccountNumber() {
-        return UUID.randomUUID().toString().substring(0, 8);
+		 Random random = new Random();
+	    int agency = 1000 + random.nextInt(9000);
+	    int account = 100000 + random.nextInt(900000);
+	    return String.format("%04d-%06d", agency, account);
     }
 	
 	public void addOperation(Operation operation) {
