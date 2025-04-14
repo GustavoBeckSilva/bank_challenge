@@ -20,6 +20,9 @@ import br.com.compass.bankchallenge.domain.User;
 import br.com.compass.bankchallenge.domain.enums.AccessLevel;
 import br.com.compass.bankchallenge.domain.enums.AccountType;
 import br.com.compass.bankchallenge.domain.enums.RefundStatus;
+import br.com.compass.bankchallenge.exceptions.BusinessLogicException;
+import br.com.compass.bankchallenge.exceptions.DatabaseException;
+import br.com.compass.bankchallenge.exceptions.ValidationException;
 import br.com.compass.bankchallenge.repository.AccountRepository;
 import br.com.compass.bankchallenge.repository.RefundRequestRepository;
 import br.com.compass.bankchallenge.service.AccountService;
@@ -29,6 +32,7 @@ import br.com.compass.bankchallenge.service.OperationService;
 import br.com.compass.bankchallenge.service.RefundRequestService;
 import br.com.compass.bankchallenge.service.StatementService;
 import br.com.compass.bankchallenge.service.UserService;
+import br.com.compass.bankchallenge.util.InputValidatorUtil;
 import br.com.compass.bankchallenge.util.JPAUtil;
 
 public class App {
@@ -91,13 +95,13 @@ public class App {
         }
     }
     
-    public static User loginSection(Scanner scanner) { // 
+    public static User loginSection(Scanner scanner) { // Done
     	
         AuthService authService = new AuthService();
 
         try {
             System.out.println("\n\n\n\n========= Login =========");
-            System.out.print("Enter your login: ");
+            System.out.print("Login (CPF for clients, email for managers)\nEnter your login: ");
             String email = scanner.nextLine().trim();
 
             System.out.print("Enter password: ");
@@ -121,70 +125,97 @@ public class App {
         }
     }
     
-    public static void accountOpeningSection(Scanner scanner) { // 
-    	
+    public static void accountOpeningSection(Scanner scanner) { // Done
+
         System.out.println("\n=== Account Opening ===");
-        System.out.print("Enter your CPF: ");
+        System.out.print("Enter your CPF (12345678909): ");
         String cpf = scanner.nextLine().trim();
 
+        if (!InputValidatorUtil.isValidCpf(cpf)) {
+            System.out.println("\nInvalid CPF format!");
+            return;
+        }
+
         ClientService clientService = new ClientService();
-        
+
         if (clientService.findByCpf(cpf) == null) {
 
             System.out.print("Enter your name: ");
-            String name = scanner.nextLine();
-            
+            String name = scanner.nextLine().trim();
+
+            if (!InputValidatorUtil.isValidName(name)) {
+            	System.out.println("Invalid name! Must contain at least 2 characters and only letters.");
+            	return;
+            }
+           
             System.out.print("Enter a password: ");
             String password = scanner.nextLine();
-            
-            System.out.print("Enter your email: ");
-            String email = scanner.nextLine();
-            
-            System.out.print("Enter your phone number: ");
-            String phone = scanner.nextLine();
+
+            System.out.print("Enter your email (example@email.com): ");
+            String email = scanner.nextLine().trim();
+
+            if (!InputValidatorUtil.isValidEmail(email)) {
+            	System.out.println("\n\nInvalid email!\n");
+            	return;
+            }            
+
+            System.out.print("Enter your phone number (XX)XXXX-XXXX: ");
+            String phone = scanner.nextLine().trim();
+
+            if (!InputValidatorUtil.isValidPhone(phone)) {
+            	System.out.println("\n\nInvalid phone number! The format must be (XX)XXXX-XXXX or similar.\n");
+            	return;
+            }
             
             LocalDate birthDate = null;
-
+            String birthDateStr = null;
+            
+            DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd/MM/yyyy");
             while (birthDate == null) {
-                System.out.print("Enter your date of birth (dd/MM/yyyy): ");
-                String birthDateStr = scanner.nextLine();
+                
+            	System.out.print("Enter your date of birth (dd/MM/yyyy): ");
+                birthDateStr = scanner.nextLine().trim();
+                
                 try {
-                    DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+
+                	if (!InputValidatorUtil.isValidDate(birthDateStr)) {
+                    	System.out.println("Invalid date of birth!");
+                    	return;
+                	}
+                                            
                     birthDate = LocalDate.parse(birthDateStr, dtf);
-                } catch (DateTimeParseException e) {
+                    
+                } catch (DateTimeParseException | ValidationException e) {
                     System.out.println("Invalid date format! Please try again.");
                 }
             }
-            
+
             System.out.println("Select account type:");
             System.out.println("1. Checking");
             System.out.println("2. Savings");
             System.out.println("3. Payroll");
-            
+
             int accountTypeChoice = scanner.nextInt();
             scanner.nextLine(); 
-            
+
             AccountType accountType;
-            
-            if (accountTypeChoice == 1) 
+            if (accountTypeChoice == 1) {
                 accountType = AccountType.CHECKING;
-            
-            else if (accountTypeChoice == 2)
+            } else if (accountTypeChoice == 2) {
                 accountType = AccountType.SAVINGS;
-            
-            else if (accountTypeChoice == 3)
+            } else if (accountTypeChoice == 3) {
                 accountType = AccountType.PAYROLL;
-            
-            else {
+            } else {
                 System.out.println("Invalid account type selected. Defaulting to checking.");
                 accountType = AccountType.CHECKING;
             }
-                        
+
             try {
+
                 clientService.registerClient(name, email, password, cpf, phone, birthDate);
 
                 Client client = (Client) clientService.findByCpf(cpf);
-                
+
                 Account newAccount = new Account(client, accountType);
                 client.addAccount(newAccount);
 
@@ -192,22 +223,22 @@ public class App {
                 accountService.registerAccount(client, accountType);
 
                 System.out.println("\n\n\n\nAccount creation successful! Your client registration is complete.");
-                
-            } catch (IllegalArgumentException e) {
-                System.out.println("\n\n\n\nError creating account: " + e.getMessage());
-            }
-            
-        } 
-        
-        else {
 
-            System.out.println("\n\n\n\nThere is already a client with that cpf.");
+            } catch (ValidationException | IllegalArgumentException e) {
+                System.out.println("\n\n\n\nError creating account: " + e.getMessage());
+            } catch (BusinessLogicException | DatabaseException e) {
+                System.out.println("\n\n\n\nCritical error occurred: " + e.getMessage());
+            }
+
+        } else {
+
+            System.out.println("\n\n\n\nThere is already a client with that CPF.");
             System.out.println("\n\n\n\nReturning to the main menu...");
-            
+
         }
     }
     
-    public static void handleLogin(User user, Scanner scanner) { // 
+    public static void handleLogin(User user, Scanner scanner) { // Done
         
     	if (user.getAccessLevel() == AccessLevel.MANAGER) {
             managementMenu(scanner, (Manager) user);
@@ -248,7 +279,7 @@ public class App {
         }
     }
     
-    public static Boolean exitSection(Scanner scanner) { // 
+    public static Boolean exitSection(Scanner scanner) { // Done
     	
         System.out.println("\n\n\n\nExiting...");
         return false;
@@ -257,7 +288,7 @@ public class App {
     
 // Management ##########################################################################################
     
-    public static void managementMenu(Scanner scanner, Manager manager) { // 
+    public static void managementMenu(Scanner scanner, Manager manager) { // Done
     																	     	   	
     	boolean running = true;
 
@@ -272,8 +303,15 @@ public class App {
 	        System.out.println("|| 0. Exit                       ||");
             System.out.println("===================================");
             System.out.print("Choose an option: ");
-
+            
+            if (!scanner.hasNextInt()) {
+                scanner.nextLine();
+                System.out.println("\n\n\n\nInvalid input! Please enter a number.");
+                continue;
+            }
+            
             int option = scanner.nextInt();
+            scanner.nextLine(); 
 
             switch (option) {
                 case 1:
@@ -297,7 +335,7 @@ public class App {
         }
     }
     
-    public static void managerRefundRequestSection(Scanner scanner, Manager manager) { // 
+    public static void managerRefundRequestSection(Scanner scanner, Manager manager) { // Done
         RefundRequestService refundRequestService = new RefundRequestService();
         RefundRequestRepository refundRequestRepository = new RefundRequestRepository();
 
@@ -317,11 +355,21 @@ public class App {
                     request.getRequestDate());
         }
 
-        System.out.print("\n\nEnter the ID of the refund request to process (or 0 to cancel): ");
-        Long requestId = scanner.nextLong();
-        scanner.nextLine();
+        Long requestId = null;
+        while (true) {
+            System.out.print("\n\nEnter the ID of the refund request to process (or 0 to cancel): ");
+            if (scanner.hasNextLong()) {
+                requestId = scanner.nextLong();
+                scanner.nextLine();
+                break;
+            } else {
+                scanner.nextLine(); 
+                System.out.println("Invalid input. Please enter a valid numeric ID.");
+            }
+        }
 
-        if (requestId == 0) return;
+        if (requestId == 0)
+            return;
 
         System.out.print("\nApprove this refund? (y/n): ");
         String input = scanner.nextLine().trim().toLowerCase();
@@ -337,78 +385,105 @@ public class App {
                 System.out.println("\n\nInvalid choice.");
             }
         } catch (Exception e) {
-            System.out.println("\n\nError processing refund: " + e.getMessage());
+            String errorMessage = e.getMessage().toLowerCase();
+
+            if (errorMessage.contains("insufficient balance")) {
+                System.out.println("\n\nRefund cannot be processed because the source account does not have sufficient balance.");
+            } else if (errorMessage.contains("constraint") || errorMessage.contains("duplicate")) {
+                System.out.println("\n\nThis refund has already been requested and cannot be duplicated.");
+            } else {
+                System.out.println("\n\nAn unexpected error occurred while processing the refund: " + e.getMessage());
+            }
         }
     }
     
-    public static void lockedAccountsSection(Scanner scanner) { // 
-    	UserService userService = new UserService();
-        List<User> blockedUsers = userService.findBlockedUsers();
+    public static void lockedAccountsSection(Scanner scanner) { // Done
+    	 	UserService userService = new UserService();
+    	    List<User> blockedUsers = userService.findBlockedUsers();
 
-        if (blockedUsers == null || blockedUsers.isEmpty()) {
-            System.out.println("\n\nThere are no locked users.");
-            return;
-        }
+    	    if (blockedUsers == null || blockedUsers.isEmpty()) {
+    	        System.out.println("\n\nThere are no locked users.");
+    	        return;
+    	    }
 
-        System.out.println("\n\n\n\n=== Locked Users ===");
-        for (User user : blockedUsers) {
-            System.out.printf("ID: %d | Name: %s | Email: %s%n", user.getId(), user.getName(), user.getEmail());
-        }
+    	    System.out.println("\n\n\n\n=== Locked Users ===");
+    	    for (User user : blockedUsers) {
+    	        System.out.printf("ID: %d | Name: %s | Email: %s%n", user.getId(), user.getName(), user.getEmail());
+    	    }
 
-        System.out.print("\n\nEnter the ID of the user to unlock (or 0 to cancel): ");
-        Long userId = scanner.nextLong();
-        scanner.nextLine();
+    	    Long userId = null;
+    	    while (true) {
+    	        System.out.print("\n\nEnter the ID of the user to unlock (or 0 to cancel): ");
+    	        if (scanner.hasNextLong()) {
+    	            userId = scanner.nextLong();
+    	            scanner.nextLine(); 
+    	            break;
+    	        } else {
+    	            scanner.nextLine(); 
+    	            System.out.println("Invalid input. Please enter a valid numeric ID.");
+    	        }
+    	    }
 
-        if (userId == 0) return;
+    	    if (userId == 0) return;
 
-        User userToUnlock = userService.findById(userId);
+    	    User userToUnlock = userService.findById(userId);
 
-        if (userToUnlock == null || !userToUnlock.isBlocked()) {
-            System.out.println("\n\nInvalid ID or user is not locked.");
-            return;
-        }
+    	    if (userToUnlock == null || !userToUnlock.isBlocked()) {
+    	        System.out.println("\n\nInvalid ID or user is not locked.");
+    	        return;
+    	    }
 
-        System.out.print("\n\nDo you want to unlock this user? (y/n): ");
-        String confirmation = scanner.nextLine().trim().toLowerCase();
+    	    System.out.print("\n\nDo you want to unlock this user? (y/n): ");
+    	    String confirmation = scanner.nextLine().trim().toLowerCase();
 
-        if (confirmation.equals("y") || confirmation.equals("yes")) {
-            userToUnlock.setBlocked(false);
-            userToUnlock.setFailedLoginAttempts(0);
-            userService.update(userToUnlock);
-            System.out.println("\n\nUser unlocked successfully.");
-        } else {
-            System.out.println("\n\nOperation canceled.");
-        }
+    	    if (confirmation.equals("y") || confirmation.equals("yes")) {
+    	        userToUnlock.setBlocked(false);
+    	        userToUnlock.setFailedLoginAttempts(0);
+    	        userService.update(userToUnlock);
+    	        System.out.println("\n\nUser unlocked successfully.");
+    	    } else {
+    	        System.out.println("\n\nOperation canceled.");
+    	    }
     }
     
-    public static void createManagerSection(Scanner scanner) { // 
+    public static void createManagerSection(Scanner scanner) { // Done
     	
-    	scanner.nextLine();
+	    System.out.println("\n\n\n\n=== Create New Manager ===");
 
-        System.out.println("\n\n\n\n=== Create New Manager ===");
+	    System.out.print("Name: ");
+	    String name = scanner.nextLine().trim();
 
-        System.out.print("Name: ");
-        String name = scanner.nextLine().trim();
+	    System.out.print("Email (example@email.com): ");
+	    String email = scanner.nextLine().trim();
 
-        System.out.print("Email: ");
-        String email = scanner.nextLine().trim();
+	    System.out.print("Password: ");
+	    String password = scanner.nextLine().trim();
 
-        System.out.print("Password: ");
-        String password = scanner.nextLine().trim();
+	    if (name.isBlank() || email.isBlank() || password.isBlank()) {
+	        System.out.println("\n\nAll fields are required. Manager not created.");
+	        return;
+	    }
 
-        if (name.isBlank() || email.isBlank() || password.isBlank()) {
-            System.out.println("\n\nAll fields are required. Manager not created.");
-            return;
-        }
+	    if (!InputValidatorUtil.isValidName(name)) {
+	        System.out.println("\n\nInvalid name format. Manager not created.");
+	        return;
+	    }
 
-        AuthService authService = new AuthService();
-        authService.registerManager(name, email, password);    	
+	    if (!InputValidatorUtil.isValidEmail(email)) {
+	        System.out.println("\n\nInvalid email format. Manager not created.");
+	        return;
+	    }   	    
+
+	    AuthService authService = new AuthService();
+	    authService.registerManager(name, email, password);
+	    System.out.println("\n\nManager created successfully."); 	
+	    
     }
     
   
 // Client ##########################################################################################
     
-    public static void bankMenu(Scanner scanner, Client client, Account account) {	//
+    public static void bankMenu(Scanner scanner, Client client, Account account) {	// Done
        
     	boolean running = true;
 
@@ -425,7 +500,15 @@ public class App {
             System.out.println("=============================");
             System.out.print("Choose an option: ");
 
-            int option = scanner.nextInt();
+            int option = -1;
+            if (scanner.hasNextInt()) {
+                option = scanner.nextInt();
+                scanner.nextLine();
+            } else {
+                System.out.println("\nInvalid input! Please enter a number.\n");
+                scanner.nextLine();
+                continue;
+            }
 
             switch (option) {
                 case 1:
@@ -458,14 +541,20 @@ public class App {
         }
     }
         
-    public static void depositSection(Scanner scanner, Account account) { // 
+    public static void depositSection(Scanner scanner, Account account) { // Done
     	
     	System.out.println("\n\n\n\n=== Deposit ===");
+        
+        System.out.print("Enter Deposit amount: ");
+        String input = scanner.nextLine().trim();
+
         try {
-            scanner.nextLine();
-            
-            System.out.print("Enter Deposit amount: ");
-            Double amount = Double.parseDouble(scanner.nextLine().trim());
+            double amount = Double.parseDouble(input);
+
+            if (amount <= 0) {
+                System.out.println("\n\nInvalid amount. Deposit must be greater than zero.");
+                return;
+            }
 
             account = refreshAccount(account);
 
@@ -473,36 +562,47 @@ public class App {
             operationService.deposit(account.getId(), amount);
 
             System.out.println("\n\nDeposit successful!");
+            
+        } catch (NumberFormatException e) {
+            System.out.println("\n\nInvalid input. Please enter a valid number.");
         } catch (Exception e) {
             System.out.println("\n\nError during deposit: " + e.getMessage());
-        } 
+        }
     }
     
-    public static void withdrawSection(Scanner scanner, Account account) { // 
-    	
+    public static void withdrawSection(Scanner scanner, Account account) { // Done
+        
     	System.out.println("\n\n\n\n=== Withdraw ===");
-	    try {
-	        scanner.nextLine();
 
-	        System.out.print("Enter withdrawal amount: ");
-	        Double amount = Double.parseDouble(scanner.nextLine().trim());
+        System.out.print("Enter withdrawal amount: ");
+        String input = scanner.nextLine().trim();
 
-	        account = refreshAccount(account);
+        try {
+            double amount = Double.parseDouble(input);
 
-	        OperationService operationService = new OperationService();
-	        operationService.withdrawal(account.getId(), amount);
+            if (amount <= 0) {
+                System.out.println("\n\nInvalid amount. Withdrawal must be greater than zero.");
+                return;
+            }
 
-	        System.out.println("\n\nWithdrawal successful!");
-	    } catch (Exception e) {
-	        System.out.println("\n\nError during withdrawal: " + e.getMessage());
-	    }
+            account = refreshAccount(account);
+
+            OperationService operationService = new OperationService();
+            operationService.withdrawal(account.getId(), amount);
+
+            System.out.println("\n\nWithdrawal successful!");
+        } catch (NumberFormatException e) {
+            System.out.println("\n\nInvalid input. Please enter a valid number.");
+        } catch (Exception e) {
+            System.out.println("\n\nError during withdrawal: " + e.getMessage());
+        }
     }
 
-    public static void transferSection(Scanner scanner, Account account) { // 
-    	
-    	System.out.println("\n\n\n\n=== Transfer ===");
+    public static void transferSection(Scanner scanner, Account account) { // Done
+
+        System.out.println("\n\n\n\n=== Transfer ===");
+
         try {
-            scanner.nextLine();
 
             System.out.print("Enter destination account number: ");
             String destinationAccountNumber = scanner.nextLine().trim();
@@ -516,7 +616,20 @@ public class App {
             }
 
             System.out.print("Enter transfer amount: ");
-            Double amount = Double.parseDouble(scanner.nextLine().trim());
+            String amountInput = scanner.nextLine().trim();
+            double amount;
+
+            try {
+                amount = Double.parseDouble(amountInput);
+            } catch (NumberFormatException e) {
+                System.out.println("\n\nInvalid input. Please enter a valid number for the transfer amount.");
+                return;
+            }
+
+            if (amount <= 0) {
+                System.out.println("\n\nTransfer amount must be greater than zero.");
+                return;
+            }
 
             account = refreshAccount(account);
 
@@ -525,13 +638,14 @@ public class App {
                 return;
             }
 
-            System.out.printf("You are about to transfer %.2f from account %s (Owner: %s) to account %s (Owner: %s). Confirm? (yes/no): ",
-                    amount,
-                    account.getAccountNumber(), account.getClient().getName(),
-                    destinationAccount.getAccountNumber(), destinationAccount.getClient().getName());
+            System.out.printf(
+                "You are about to transfer %.2f from account %s (Owner: %s) to account %s (Owner: %s). Confirm? (yes/no): ",
+                amount,
+                account.getAccountNumber(), account.getClient().getName(),
+                destinationAccount.getAccountNumber(), destinationAccount.getClient().getName()
+            );
 
             String confirmation = scanner.nextLine().trim().toLowerCase();
-
             if (!confirmation.equals("yes") && !confirmation.equals("y")) {
                 System.out.println("\n\nTransfer cancelled.");
                 return;
@@ -541,12 +655,13 @@ public class App {
             operationService.transfer(account.getId(), destinationAccount.getId(), amount);
 
             System.out.println("\n\nTransfer successful!");
+
         } catch (Exception e) {
             System.out.println("\n\nError during transfer: " + e.getMessage());
         }
     }
     
-    public static void clientRefundRequestSection(Scanner scanner, Account account, Client client) { // 
+    public static void clientRefundRequestSection(Scanner scanner, Account account, Client client) { // Done
         
     	RefundRequestService refundRequestService = new RefundRequestService();
 
@@ -560,33 +675,46 @@ public class App {
         switch (option) {
             case 1:
             	StatementService statementService = new StatementService();
-            	
-            	ZoneId zone = ZoneId.of("America/Sao_Paulo");
-            	
-            	List<Operation> transfers = statementService.viewTransferStatement(account, LocalDateTime.MIN, LocalDateTime.now(zone));
-            	
-            	
-            	if (transfers.isEmpty()) {
+
+                ZoneId zone = ZoneId.of("America/Sao_Paulo");
+
+                List<Operation> transfers = statementService.viewTransferStatement(account, LocalDateTime.MIN, LocalDateTime.now(zone));
+
+                if (transfers.isEmpty()) {
                     System.out.println("\n\nNo transfers found for your account.");
                     return;
                 }
-            	
+
+                System.out.println("\n\n=== Your Transfers ===");
                 for (Operation op : transfers) {
                     System.out.printf("ID: %d | Type: %s | Amount: %.2f | Date: %s%n",
                         op.getId(), op.getOperationType(), op.getAmount(), op.getOperationDate());
                 }
-            	
-            	System.out.print("\n\nEnter the transaction ID for the refund: ");
-                Long operationId = scanner.nextLong();
-                scanner.nextLine();
+
+                System.out.print("\n\nEnter the transaction ID for the refund: ");
+                String idInput = scanner.nextLine().trim();
+                long operationId;
+
+                try {
+                    operationId = Long.parseLong(idInput);
+                } catch (NumberFormatException e) {
+                    System.out.println("\n\nInvalid transaction ID. Operation cancelled.");
+                    return;
+                }
 
                 try {
                     refundRequestService.requestRefund(operationId, client.getId());
                     System.out.println("Refund request submitted successfully.");
                 } catch (Exception e) {
-                    System.out.println("Failed to request refund: " + e.getMessage());
+                    String message = e.getMessage().toLowerCase();
+                    if (message.contains("duplicate entry") || message.contains("uk_s5jjoys667jtxsew6vbdmimy1")) {
+                        System.out.println("\n\nA refund has already been requested for this transaction.");
+                    } else {
+                        System.out.println("\n\nFailed to request refund: " + e.getMessage());
+                    }
                 }
                 break;
+
 
             case 2:
                 var requests = new RefundRequestRepository().findByClientId(client.getId());
@@ -614,7 +742,7 @@ public class App {
         }
     }
     
-    public static void bankStatementSection(Scanner scanner, Client client, Account account) { // 
+    public static void bankStatementSection(Scanner scanner, Client client, Account account) { // Done 
         
     	System.out.println("\n\n=== Bank Statement Menu ===");
         System.out.println("0. Exit");
@@ -623,15 +751,27 @@ public class App {
         System.out.println("3. View withdraw statement");
         System.out.println("4. View transfer statement");
         System.out.print("Choose an option: ");
-        
-        int option = scanner.nextInt();
-        scanner.nextLine(); 
-        
-        if(option == 0) {
-        	exitSection(scanner);
-        	return;
+
+        String input = scanner.nextLine().trim();
+        int option;
+
+        try {
+            option = Integer.parseInt(input);
+        } catch (NumberFormatException e) {
+            System.out.println("\n\nInvalid input. Please enter a number between 0 and 4.");
+            return;
         }
-                
+
+        if (option < 0 || option > 4) {
+            System.out.println("\n\nInvalid option. Please choose a number between 0 and 4.");
+            return;
+        }
+
+        if (option == 0) {
+            exitSection(scanner);
+            return;
+        }
+
         System.out.print("\n\nEnter period start (e.g., 01/04/2025 00:00): ");
         LocalDateTime start;
         try {
@@ -641,7 +781,7 @@ public class App {
             System.out.println("Invalid date format. Use dd/MM/yyyy HH:mm");
             return;
         }
-        
+
         System.out.print("Enter period end (e.g., 10/04/2025 23:59): ");
         LocalDateTime end;
         try {
@@ -651,12 +791,12 @@ public class App {
             System.out.println("Invalid date format. Use dd/MM/yyyy HH:mm");
             return;
         }
-        
+
         if (!start.isBefore(end)) {
             System.out.println("Start date must be before end date.");
             return;
         }
-        
+
         LocalDateTime now = LocalDateTime.now(ZoneId.of("America/Sao_Paulo"));
         if (start.isAfter(now) || end.isAfter(now)) {
             System.out.println("\n\nDates cannot be in the future.");
@@ -667,9 +807,6 @@ public class App {
         List<Operation> operations = new ArrayList<>();
 
         switch (option) {
-        	case 0:
-        		exitSection(scanner);
-        		return;
             case 1:
                 operations = service.viewStatement(account.getId(), start, end);
                 break;
@@ -682,9 +819,6 @@ public class App {
             case 4:
                 operations = service.viewTransferStatement(account, start, end);
                 break;
-            default:
-                System.out.println("Invalid option.");
-                return;
         }
 
         if (operations.isEmpty()) {
@@ -702,21 +836,16 @@ public class App {
         String exportAnswer = scanner.nextLine().trim().toLowerCase();
 
         if (exportAnswer.equals("yes") || exportAnswer.equals("y")) {
-
-        	String folderPath = "statements";
+            String folderPath = "statements";
             File folder = new File(folderPath);
-            
             if (!folder.exists())
-                folder.mkdirs();           
-            
+                folder.mkdirs();
+
             String uniqueId = String.valueOf(System.currentTimeMillis());
-
             String fileName = client.getId() + "_" + uniqueId + "_statement.csv";
-
             String filePath = folderPath + File.separator + fileName;
-        	        	
+
             boolean success = service.exportStatementToCSV(operations, filePath);
-            
             if (success) {
                 System.out.println("\n\nCSV exported successfully to: " + filePath);
             } else {
@@ -725,54 +854,59 @@ public class App {
         }
     }
     
-    public static void createNewAccount(Scanner scanner, Client client) { // 
+    public static void createNewAccount(Scanner scanner, Client client) { // Done
     	
     	System.out.println("\n=== New Account ===");
-                    
+
         System.out.println("Select account type:");
         System.out.println("1. Checking");
         System.out.println("2. Savings");
         System.out.println("3. Payroll");
-        
-        int accountTypeChoice = scanner.nextInt();
-        scanner.nextLine(); 
-        
-        AccountType accountType;
-        
-        if (accountTypeChoice == 1) 
-            accountType = AccountType.CHECKING;
-        
-        else if (accountTypeChoice == 2)
-            accountType = AccountType.SAVINGS;
-        
-        else if (accountTypeChoice == 3)
-            accountType = AccountType.PAYROLL;
-        
-        else {
-            System.out.println("Invalid account type selected. Defaulting to checking.");
-            accountType = AccountType.CHECKING;
-        }
-                    
+
+        System.out.print("\nChoose an option: ");
+        String input = scanner.nextLine().trim();
+
+        int accountTypeChoice;
         try {
-                            
+            accountTypeChoice = Integer.parseInt(input);
+        } catch (NumberFormatException e) {
+            System.out.println("\n\nInvalid input. Please enter a number between 1 and 3.");
+            return;
+        }
+
+        AccountType accountType;
+
+        switch (accountTypeChoice) {
+            case 1:
+                accountType = AccountType.CHECKING;
+                break;
+            case 2:
+                accountType = AccountType.SAVINGS;
+                break;
+            case 3:
+                accountType = AccountType.PAYROLL;
+                break;
+            default:
+                System.out.println("\n\nInvalid account type selected. Defaulting to CHECKING.");
+                accountType = AccountType.CHECKING;
+        }
+
+        try {
             Account newAccount = new Account(client, accountType);
             client.addAccount(newAccount);
 
             AccountService accountService = new AccountService();
             accountService.registerAccount(client, accountType);
 
-            System.out.println("\n\n\n\nNew account creation successful!");
-            
+            System.out.println("\n\nNew account creation successful!");
         } catch (IllegalArgumentException e) {
-            System.out.println("\n\n\n\nError creating account: " + e.getMessage());
+            System.out.println("\n\nError creating account: " + e.getMessage());
         }
-            
-    } 
         
-    public static void checkBalanceSection(Scanner scanner, Account account) { // 
-    	
-        scanner.nextLine(); 
+    }
         
+    public static void checkBalanceSection(Scanner scanner, Account account) { // Done
+    	        
         AccountRepository accountRepository = new AccountRepository();
         Account refreshedAccount = accountRepository.findById(account.getId());
     	
@@ -788,7 +922,7 @@ public class App {
     
 // Auxiliary methods ##########################################################################################
     
-    private static Account refreshAccount(Account account) {
+    private static Account refreshAccount(Account account) { 	// Done
         return new AccountRepository().findById(account.getId());
     }
     

@@ -4,8 +4,8 @@ import br.com.compass.bankchallenge.domain.Client;
 import br.com.compass.bankchallenge.domain.Manager;
 import br.com.compass.bankchallenge.domain.User;
 import br.com.compass.bankchallenge.domain.enums.AccessLevel;
+import br.com.compass.bankchallenge.util.InputValidatorUtil;
 import br.com.compass.bankchallenge.util.JPAUtil;
-import br.com.compass.bankchallenge.util.LoginIdentifierUtil;
 import br.com.compass.bankchallenge.util.SecurityUtil;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityTransaction;
@@ -19,13 +19,13 @@ public class AuthService {
 	    try {
 	        User user = null;
 
-	        if (LoginIdentifierUtil.isCPF(input)) {
+	        if (InputValidatorUtil.isValidCpf(input)) {
 	            user = em.createQuery("SELECT c FROM Client c WHERE c.cpf = :input", Client.class)
 	                     .setParameter("input", input)
 	                     .getSingleResult();
 	        }
 
-	        else if (LoginIdentifierUtil.isEmail(input)) {
+	        else if (InputValidatorUtil.isValidEmail(input)) {
 	            user = em.createQuery("SELECT m FROM Manager m WHERE m.email = :input", Manager.class)
 	                     .setParameter("input", input)
 	                     .getSingleResult();
